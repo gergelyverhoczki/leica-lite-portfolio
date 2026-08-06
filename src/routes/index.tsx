@@ -1,12 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState, useCallback } from "react";
 
-import photo1 from "../assets/photo-1.jpg";
-import photo2 from "../assets/photo-2.jpg";
-import photo3 from "../assets/photo-3.jpg";
-import photo4 from "../assets/photo-4.jpg";
-import photo5 from "../assets/photo-5.jpg";
-import photo6 from "../assets/photo-6.jpg";
+import photo1Asset from "../assets/photo-1.jpg.asset.json";
+import photo2Asset from "../assets/photo-2.jpg.asset.json";
+import photo3Asset from "../assets/photo-3.jpg.asset.json";
+import photo4Asset from "../assets/photo-4.jpg.asset.json";
+import photo5Asset from "../assets/photo-5.jpg.asset.json";
+import photo6Asset from "../assets/photo-6.jpg.asset.json";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -30,32 +30,32 @@ type Photo = {
 
 const photos: Photo[] = [
   {
-    src: photo1,
+    src: photo1Asset.url,
     alt: "Pedestrians with umbrellas on a wet Parisian cobblestone street",
     orientation: "portrait",
   },
   {
-    src: photo2,
+    src: photo2Asset.url,
     alt: "Intimate portrait in warm window light",
     orientation: "landscape",
   },
   {
-    src: photo3,
+    src: photo3Asset.url,
     alt: "Brutalist concrete architecture with strong geometric shadows",
     orientation: "portrait",
   },
   {
-    src: photo4,
+    src: photo4Asset.url,
     alt: "Elderly woman walking through a sunlit Mediterranean alley",
     orientation: "landscape",
   },
   {
-    src: photo5,
+    src: photo5Asset.url,
     alt: "Artisanal ceramic cup on marble surface",
     orientation: "portrait",
   },
   {
-    src: photo6,
+    src: photo6Asset.url,
     alt: "Urban street at blue hour with wet pavement reflections",
     orientation: "landscape",
   },
