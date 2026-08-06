@@ -1,24 +1,371 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useState, useCallback } from "react";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
+import photo1 from "../assets/photo-1.jpg";
+import photo2 from "../assets/photo-2.jpg";
+import photo3 from "../assets/photo-3.jpg";
+import photo4 from "../assets/photo-4.jpg";
+import photo5 from "../assets/photo-5.jpg";
+import photo6 from "../assets/photo-6.jpg";
+
 export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title: "Elena Voss — Photography" },
+      { name: "description", content: "A minimalist photography portfolio inspired by the precision and restraint of Leica." },
+      { property: "og:title", content: "Elena Voss — Photography" },
+      { property: "og:description", content: "A minimalist photography portfolio inspired by the precision and restraint of Leica." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
   component: Index,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
+type Photo = {
+  src: string;
+  alt: string;
+  title: string;
+  location: string;
+  year: string;
+  orientation: "portrait" | "landscape";
+};
+
+const photos: Photo[] = [
+  {
+    src: photo1,
+    alt: "Pedestrians with umbrellas on a wet Parisian cobblestone street",
+    title: "Rue Bonaparte",
+    location: "Paris",
+    year: "2024",
+    orientation: "portrait",
+  },
+  {
+    src: photo2,
+    alt: "Intimate portrait in warm window light",
+    title: "Morning Light",
+    location: "Lisbon",
+    year: "2024",
+    orientation: "landscape",
+  },
+  {
+    src: photo3,
+    alt: "Brutalist concrete architecture with strong geometric shadows",
+    title: "Concrete Lines",
+    location: "Berlin",
+    year: "2023",
+    orientation: "portrait",
+  },
+  {
+    src: photo4,
+    alt: "Elderly woman walking through a sunlit Mediterranean alley",
+    title: "Alleyway",
+    location: "Matera",
+    year: "2023",
+    orientation: "landscape",
+  },
+  {
+    src: photo5,
+    alt: "Artisanal ceramic cup on marble surface",
+    title: "Still Life",
+    location: "Studio",
+    year: "2024",
+    orientation: "portrait",
+  },
+  {
+    src: photo6,
+    alt: "Urban street at blue hour with wet pavement reflections",
+    title: "Blue Hour",
+    location: "Tokyo",
+    year: "2023",
+    orientation: "landscape",
+  },
+];
+
 function Index() {
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const [isClosing, setIsClosing] = useState(false);
+
+  const openLightbox = (index: number) => {
+    setIsClosing(false);
+    setActiveIndex(index);
+  };
+
+  const closeLightbox = useCallback(() => {
+    setIsClosing(true);
+    setTimeout(() => {
+      setActiveIndex(null);
+      setIsClosing(false);
+    }, 300);
+  }, []);
+
+  const goNext = useCallback(() => {
+    if (activeIndex === null) return;
+    setActiveIndex((activeIndex + 1) % photos.length);
+  }, [activeIndex]);
+
+  const goPrev = useCallback(() => {
+    if (activeIndex === null) return;
+    setActiveIndex((activeIndex - 1 + photos.length) % photos.length);
+  }, [activeIndex]);
+
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (activeIndex === null) return;
+      if (e.key === "Escape") closeLightbox();
+      if (e.key === "ArrowRight") goNext();
+      if (e.key === "ArrowLeft") goPrev();
+    };
+
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [activeIndex, closeLightbox, goNext, goPrev]);
+
+  useEffect(() => {
+    if (activeIndex !== null) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [activeIndex]);
+
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
+    <div className="min-h-screen bg-background text-foreground">
+      {/* Header */}
+      <header className="fixed top-0 left-0 right-0 z-40 bg-background/90 backdrop-blur-sm">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5 md:px-10">
+          <Link to="/" className="group flex items-center gap-3">
+            <span className="h-3 w-3 rounded-full bg-leica-red transition-transform duration-300 group-hover:scale-125" aria-hidden="true" />
+            <span className="font-heading text-lg font-medium tracking-tight">Elena Voss</span>
+          </Link>
+          <nav className="hidden items-center gap-8 text-sm font-medium md:flex">
+            <a href="#work" className="story-link text-muted-foreground transition-colors hover:text-foreground">
+              Work
+            </a>
+            <a href="#about" className="story-link text-muted-foreground transition-colors hover:text-foreground">
+              About
+            </a>
+            <a href="#contact" className="story-link text-muted-foreground transition-colors hover:text-foreground">
+              Contact
+            </a>
+          </nav>
+        </div>
+      </header>
+
+      {/* Hero */}
+      <section className="px-6 pt-40 pb-20 md:px-10 md:pt-52 md:pb-32">
+        <div className="mx-auto max-w-7xl">
+          <div className="max-w-3xl fade-in-up">
+            <p className="mb-4 text-sm font-medium uppercase tracking-widest text-muted-foreground">
+              Documentary Photography
+            </p>
+            <h1 className="font-heading text-4xl font-medium leading-[1.1] tracking-tight md:text-6xl lg:text-7xl">
+              Seeing the quiet details others pass by.
+            </h1>
+            <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground md:text-lg">
+              A portfolio of street, portrait, and architectural work made with available light and patience.
+            </p>
+          </div>
+
+          <button
+            onClick={() => openLightbox(0)}
+            className="group relative mt-16 block w-full cursor-zoom-in overflow-hidden rounded-sm"
+            aria-label="Open featured photograph"
+          >
+            <img
+              src={photos[0].src}
+              alt={photos[0].alt}
+              width={1600}
+              height={1067}
+              className="aspect-[3/2] w-full object-cover transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.02]"
+              loading="eager"
+            />
+            <div className="pointer-events-none absolute inset-0 flex items-end justify-between bg-gradient-to-t from-black/40 to-transparent p-6 opacity-0 transition-opacity duration-300 group-hover:opacity-100 md:p-10">
+              <div>
+                <p className="font-heading text-lg text-white">{photos[0].title}</p>
+                <p className="text-sm text-white/80">{photos[0].location}, {photos[0].year}</p>
+              </div>
+              <span className="rounded-full border border-white/40 px-4 py-2 text-sm text-white">View</span>
+            </div>
+          </button>
+        </div>
+      </section>
+
+      {/* Gallery */}
+      <section id="work" className="px-6 py-20 md:px-10 md:py-32">
+        <div className="mx-auto max-w-7xl">
+          <div className="mb-12 flex items-end justify-between md:mb-16">
+            <h2 className="font-heading text-2xl font-medium tracking-tight md:text-3xl">Selected Work</h2>
+            <span className="text-sm text-muted-foreground">{photos.length} photographs</span>
+          </div>
+
+          <div className="columns-1 gap-6 md:columns-2">
+            {photos.map((photo, index) => (
+              <button
+                key={photo.title}
+                onClick={() => openLightbox(index)}
+                className="group mb-6 block w-full cursor-zoom-in overflow-hidden rounded-sm text-left"
+                aria-label={`Open ${photo.title}`}
+              >
+                <div className="relative overflow-hidden">
+                  <img
+                    src={photo.src}
+                    alt={photo.alt}
+                    width={photo.orientation === "portrait" ? 1200 : 1600}
+                    height={photo.orientation === "portrait" ? 1600 : 1200}
+                    loading="lazy"
+                    className="w-full object-cover transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.03]"
+                  />
+                  <div className="pointer-events-none absolute inset-0 bg-black/0 transition-colors duration-300 group-hover:bg-black/10" />
+                </div>
+                <div className="mt-4 flex items-baseline justify-between">
+                  <div>
+                    <h3 className="font-heading text-base font-medium">{photo.title}</h3>
+                    <p className="text-sm text-muted-foreground">{photo.location}, {photo.year}</p>
+                  </div>
+                  <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                    View
+                  </span>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* About */}
+      <section id="about" className="border-t border-border px-6 py-20 md:px-10 md:py-32">
+        <div className="mx-auto grid max-w-7xl gap-12 md:grid-cols-2 md:gap-20">
+          <div>
+            <h2 className="font-heading text-2xl font-medium tracking-tight md:text-3xl">About</h2>
+          </div>
+          <div className="space-y-6">
+            <p className="text-lg leading-relaxed text-foreground md:text-xl">
+              I photograph the space between moments — the hesitation before a stranger enters the frame, the last light
+              on a building facade, the stillness of an ordinary object made extraordinary by attention.
+            </p>
+            <p className="leading-relaxed text-muted-foreground">
+              My practice is rooted in available light and slow observation. I work primarily with rangefinder cameras
+              and prime lenses, preferring restraint over spectacle and quiet precision over noise.
+            </p>
+            <div className="grid grid-cols-2 gap-8 pt-6">
+              <div>
+                <p className="font-heading text-3xl font-medium">12</p>
+                <p className="mt-1 text-sm text-muted-foreground">Years photographing</p>
+              </div>
+              <div>
+                <p className="font-heading text-3xl font-medium">24</p>
+                <p className="mt-1 text-sm text-muted-foreground">Countries documented</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Contact */}
+      <section id="contact" className="border-t border-border px-6 py-20 md:px-10 md:py-32">
+        <div className="mx-auto max-w-7xl">
+          <div className="grid gap-12 md:grid-cols-2 md:gap-20">
+            <div>
+              <h2 className="font-heading text-2xl font-medium tracking-tight md:text-3xl">Get in touch</h2>
+              <p className="mt-4 max-w-md text-muted-foreground">
+                Open for commissions, editorial work, and print inquiries.
+              </p>
+            </div>
+            <div className="space-y-6">
+              <a
+                href="mailto:hello@elenavoss.com"
+                className="block font-heading text-2xl font-medium transition-colors hover:text-leica-red md:text-3xl"
+              >
+                hello@elenavoss.com
+              </a>
+              <div className="flex flex-wrap gap-6 text-sm font-medium text-muted-foreground">
+                <a href="#" className="story-link transition-colors hover:text-foreground">Instagram</a>
+                <a href="#" className="story-link transition-colors hover:text-foreground">Prints</a>
+                <a href="#" className="story-link transition-colors hover:text-foreground">Newsletter</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="border-t border-border px-6 py-8 md:px-10">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 text-sm text-muted-foreground md:flex-row">
+          <p>© {new Date().getFullYear()} Elena Voss. All rights reserved.</p>
+          <p>Made with patience and available light.</p>
+        </div>
+      </footer>
+
+      {/* Lightbox */}
+      {activeIndex !== null && (
+        <div
+          className={`fixed inset-0 z-50 flex items-center justify-center bg-black/95 p-4 md:p-10 ${
+            isClosing ? "lightbox-exit" : "lightbox-enter"
+          }`}
+          onClick={closeLightbox}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Image lightbox"
+        >
+          <button
+            onClick={closeLightbox}
+            className="absolute top-5 right-5 z-50 rounded-full p-2 text-white/80 transition-colors hover:text-white md:top-8 md:right-8"
+            aria-label="Close lightbox"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 6 6 18" />
+              <path d="m6 6 12 12" />
+            </svg>
+          </button>
+
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              goPrev();
+            }}
+            className="absolute left-2 z-50 rounded-full p-3 text-white/70 transition-colors hover:text-white md:left-8"
+            aria-label="Previous image"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="m15 18-6-6 6-6" />
+            </svg>
+          </button>
+
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              goNext();
+            }}
+            className="absolute right-2 z-50 rounded-full p-3 text-white/70 transition-colors hover:text-white md:right-8"
+            aria-label="Next image"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="m9 18 6-6-6-6" />
+            </svg>
+          </button>
+
+          <div
+            className="relative max-h-full max-w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={photos[activeIndex].src}
+              alt={photos[activeIndex].alt}
+              className="max-h-[85vh] max-w-full object-contain"
+            />
+            <div className="absolute bottom-0 left-0 right-0 translate-y-full pt-4 text-center md:pt-6">
+              <p className="font-heading text-lg text-white">{photos[activeIndex].title}</p>
+              <p className="text-sm text-white/70">
+                {photos[activeIndex].location}, {photos[activeIndex].year}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
