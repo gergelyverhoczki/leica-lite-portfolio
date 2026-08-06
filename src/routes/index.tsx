@@ -25,9 +25,6 @@ export const Route = createFileRoute("/")({
 type Photo = {
   src: string;
   alt: string;
-  title: string;
-  location: string;
-  year: string;
   orientation: "portrait" | "landscape";
 };
 
@@ -35,49 +32,31 @@ const photos: Photo[] = [
   {
     src: photo1,
     alt: "Pedestrians with umbrellas on a wet Parisian cobblestone street",
-    title: "Rue Bonaparte",
-    location: "Paris",
-    year: "2024",
     orientation: "portrait",
   },
   {
     src: photo2,
     alt: "Intimate portrait in warm window light",
-    title: "Morning Light",
-    location: "Lisbon",
-    year: "2024",
     orientation: "landscape",
   },
   {
     src: photo3,
     alt: "Brutalist concrete architecture with strong geometric shadows",
-    title: "Concrete Lines",
-    location: "Berlin",
-    year: "2023",
     orientation: "portrait",
   },
   {
     src: photo4,
     alt: "Elderly woman walking through a sunlit Mediterranean alley",
-    title: "Alleyway",
-    location: "Matera",
-    year: "2023",
     orientation: "landscape",
   },
   {
     src: photo5,
     alt: "Artisanal ceramic cup on marble surface",
-    title: "Still Life",
-    location: "Studio",
-    year: "2024",
     orientation: "portrait",
   },
   {
     src: photo6,
     alt: "Urban street at blue hour with wet pavement reflections",
-    title: "Blue Hour",
-    location: "Tokyo",
-    year: "2023",
     orientation: "landscape",
   },
 ];
@@ -183,11 +162,7 @@ function Index() {
               className="aspect-[3/2] w-full object-cover transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.02]"
               loading="eager"
             />
-            <div className="pointer-events-none absolute inset-0 flex items-end justify-between bg-gradient-to-t from-black/40 to-transparent p-6 opacity-0 transition-opacity duration-300 group-hover:opacity-100 md:p-10">
-              <div>
-                <p className="font-heading text-lg text-white">{photos[0]!.title}</p>
-                <p className="text-sm text-white/80">{photos[0]!.location}, {photos[0]!.year}</p>
-              </div>
+            <div className="pointer-events-none absolute inset-0 flex items-end justify-end bg-gradient-to-t from-black/20 to-transparent p-6 opacity-0 transition-opacity duration-300 group-hover:opacity-100 md:p-10">
               <span className="rounded-full border border-white/40 px-4 py-2 text-sm text-white">View</span>
             </div>
           </button>
@@ -202,34 +177,23 @@ function Index() {
             <span className="text-sm text-muted-foreground">{photos.length} photographs</span>
           </div>
 
-          <div className="columns-1 gap-6 md:columns-2">
+          <div className="grid grid-cols-1 gap-1 sm:grid-cols-2 lg:grid-cols-3">
             {photos.map((photo, index) => (
               <button
-                key={photo.title}
+                key={index}
                 onClick={() => openLightbox(index)}
-                className="group mb-6 block w-full cursor-zoom-in overflow-hidden rounded-sm text-left"
-                aria-label={`Open ${photo.title}`}
+                className="group relative block aspect-[3/2] w-full cursor-zoom-in overflow-hidden"
+                aria-label={`Open photograph ${index + 1}`}
               >
-                <div className="relative overflow-hidden">
-                  <img
-                    src={photo.src}
-                    alt={photo.alt}
-                    width={photo.orientation === "portrait" ? 1200 : 1600}
-                    height={photo.orientation === "portrait" ? 1600 : 1200}
-                    loading="lazy"
-                    className="w-full object-cover transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.03]"
-                  />
-                  <div className="pointer-events-none absolute inset-0 bg-black/0 transition-colors duration-300 group-hover:bg-black/10" />
-                </div>
-                <div className="mt-4 flex items-baseline justify-between">
-                  <div>
-                    <h3 className="font-heading text-base font-medium">{photo.title}</h3>
-                    <p className="text-sm text-muted-foreground">{photo.location}, {photo.year}</p>
-                  </div>
-                  <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-                    View
-                  </span>
-                </div>
+                <img
+                  src={photo.src}
+                  alt={photo.alt}
+                  width={photo.orientation === "portrait" ? 1200 : 1600}
+                  height={photo.orientation === "portrait" ? 1600 : 1200}
+                  loading="lazy"
+                  className="h-full w-full object-cover transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.03]"
+                />
+                <div className="pointer-events-none absolute inset-0 bg-black/0 transition-colors duration-300 group-hover:bg-black/10" />
               </button>
             ))}
           </div>
@@ -357,12 +321,6 @@ function Index() {
               alt={photos[activeIndex]!.alt}
               className="max-h-[85vh] max-w-full object-contain"
             />
-            <div className="absolute bottom-0 left-0 right-0 translate-y-full pt-4 text-center md:pt-6">
-              <p className="font-heading text-lg text-white">{photos[activeIndex]!.title}</p>
-              <p className="text-sm text-white/70">
-                {photos[activeIndex]!.location}, {photos[activeIndex]!.year}
-              </p>
-            </div>
           </div>
         </div>
       )}
