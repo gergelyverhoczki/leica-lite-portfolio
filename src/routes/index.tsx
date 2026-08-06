@@ -25,9 +25,6 @@ export const Route = createFileRoute("/")({
 type Photo = {
   src: string;
   alt: string;
-  title: string;
-  location: string;
-  year: string;
   orientation: "portrait" | "landscape";
 };
 
@@ -35,49 +32,31 @@ const photos: Photo[] = [
   {
     src: photo1,
     alt: "Pedestrians with umbrellas on a wet Parisian cobblestone street",
-    title: "Rue Bonaparte",
-    location: "Paris",
-    year: "2024",
     orientation: "portrait",
   },
   {
     src: photo2,
     alt: "Intimate portrait in warm window light",
-    title: "Morning Light",
-    location: "Lisbon",
-    year: "2024",
     orientation: "landscape",
   },
   {
     src: photo3,
     alt: "Brutalist concrete architecture with strong geometric shadows",
-    title: "Concrete Lines",
-    location: "Berlin",
-    year: "2023",
     orientation: "portrait",
   },
   {
     src: photo4,
     alt: "Elderly woman walking through a sunlit Mediterranean alley",
-    title: "Alleyway",
-    location: "Matera",
-    year: "2023",
     orientation: "landscape",
   },
   {
     src: photo5,
     alt: "Artisanal ceramic cup on marble surface",
-    title: "Still Life",
-    location: "Studio",
-    year: "2024",
     orientation: "portrait",
   },
   {
     src: photo6,
     alt: "Urban street at blue hour with wet pavement reflections",
-    title: "Blue Hour",
-    location: "Tokyo",
-    year: "2023",
     orientation: "landscape",
   },
 ];
