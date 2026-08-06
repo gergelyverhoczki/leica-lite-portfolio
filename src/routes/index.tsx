@@ -11,9 +11,9 @@ import photo6 from "../assets/photo-6.jpg";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Elena Voss — Photography" },
+      { title: "Gergely Verhoczki — Photography" },
       { name: "description", content: "A minimalist photography portfolio inspired by the precision and restraint of Leica." },
-      { property: "og:title", content: "Elena Voss — Photography" },
+      { property: "og:title", content: "Gergely Verhoczki — Photography" },
       { property: "og:description", content: "A minimalist photography portfolio inspired by the precision and restraint of Leica." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -139,7 +139,7 @@ function Index() {
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5 md:px-10">
           <Link to="/" className="group flex items-center gap-3">
             <span className="h-3 w-3 rounded-full bg-leica-red transition-transform duration-300 group-hover:scale-125" aria-hidden="true" />
-            <span className="font-heading text-lg font-medium tracking-tight">Elena Voss</span>
+            <span className="font-heading text-lg font-medium tracking-tight">Gergely Verhoczki</span>
           </Link>
           <nav className="hidden items-center gap-8 text-sm font-medium md:flex">
             <a href="#work" className="story-link text-muted-foreground transition-colors hover:text-foreground">
@@ -277,10 +277,10 @@ function Index() {
             </div>
             <div className="space-y-6">
               <a
-                href="mailto:hello@elenavoss.com"
+                href="mailto:hello@verhoczki.com"
                 className="block font-heading text-2xl font-medium transition-colors hover:text-leica-red md:text-3xl"
               >
-                hello@elenavoss.com
+                hello@verhoczki.com
               </a>
               <div className="flex flex-wrap gap-6 text-sm font-medium text-muted-foreground">
                 <a href="#" className="story-link transition-colors hover:text-foreground">Instagram</a>
@@ -295,7 +295,7 @@ function Index() {
       {/* Footer */}
       <footer className="border-t border-border px-6 py-8 md:px-10">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 text-sm text-muted-foreground md:flex-row">
-          <p>© {new Date().getFullYear()} Elena Voss. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Gergely Verhoczki. All rights reserved.</p>
           <p>Made with patience and available light.</p>
         </div>
       </footer>
