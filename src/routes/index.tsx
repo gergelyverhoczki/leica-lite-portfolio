@@ -116,23 +116,26 @@ function Index() {
             </p>
           </div>
 
-          <button
-            onClick={() => openLightbox(0)}
-            className="group relative mt-16 block w-full cursor-zoom-in overflow-hidden rounded-sm"
-            aria-label="Open featured photograph"
-          >
-            <img
-              src={photos[0]!.src}
-              alt={photos[0]!.alt}
-              width={1600}
-              height={1067}
-              className="aspect-[3/2] w-full object-cover transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.02]"
-              loading="eager"
-            />
-            <div className="pointer-events-none absolute inset-0 flex items-end justify-end bg-gradient-to-t from-black/20 to-transparent p-6 opacity-0 transition-opacity duration-300 group-hover:opacity-100 md:p-10">
-              <span className="rounded-full border border-white/40 px-4 py-2 text-sm text-white">View</span>
-            </div>
-          </button>
+          {photos[0] && (
+            <button
+              onClick={() => openLightbox(0)}
+              className="group relative mt-16 block w-full cursor-zoom-in overflow-hidden rounded-sm"
+              aria-label="Open featured photograph"
+            >
+              <img
+                src={photos[0].src}
+                alt={photos[0].alt}
+                width={1600}
+                height={1067}
+                className="aspect-[3/2] w-full object-cover transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.02]"
+                loading="eager"
+              />
+              <div className="pointer-events-none absolute inset-0 flex items-end justify-end bg-gradient-to-t from-black/20 to-transparent p-6 opacity-0 transition-opacity duration-300 group-hover:opacity-100 md:p-10">
+                <span className="rounded-full border border-white/40 px-4 py-2 text-sm text-white">View</span>
+              </div>
+            </button>
+          )}
+
         </div>
       </section>
 
