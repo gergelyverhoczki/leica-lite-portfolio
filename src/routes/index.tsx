@@ -26,8 +26,10 @@ export const Route = createFileRoute("/")({
 
 
 function Index() {
+  const { data: photos } = useSuspenseQuery(photosQueryOptions);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [isClosing, setIsClosing] = useState(false);
+
 
   const openLightbox = (index: number) => {
     setIsClosing(false);
