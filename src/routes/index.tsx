@@ -1,14 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect, useState, useCallback } from "react";
 
-import photo1Asset from "../assets/photo-1.jpg.asset.json";
-import photo2Asset from "../assets/photo-2.jpg.asset.json";
-import photo3Asset from "../assets/photo-3.jpg.asset.json";
-import photo4Asset from "../assets/photo-4.jpg.asset.json";
-import photo5Asset from "../assets/photo-5.jpg.asset.json";
-import photo6Asset from "../assets/photo-6.jpg.asset.json";
+import { listPhotos } from "@/lib/photos.functions";
+
+const photosQueryOptions = queryOptions({
+  queryKey: ["photos"],
+  queryFn: () => listPhotos(),
+});
 
 export const Route = createFileRoute("/")({
+  loader: ({ context }) => context.queryClient.ensureQueryData(photosQueryOptions),
   head: () => ({
     meta: [
       { title: "Gergely Verhoczki — Photography" },
@@ -22,44 +24,6 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-type Photo = {
-  src: string;
-  alt: string;
-  orientation: "portrait" | "landscape";
-};
-
-const photos: Photo[] = [
-  {
-    src: photo1Asset.url,
-    alt: "Pedestrians with umbrellas on a wet Parisian cobblestone street",
-    orientation: "portrait",
-  },
-  {
-    src: photo2Asset.url,
-    alt: "Intimate portrait in warm window light",
-    orientation: "landscape",
-  },
-  {
-    src: photo3Asset.url,
-    alt: "Brutalist concrete architecture with strong geometric shadows",
-    orientation: "portrait",
-  },
-  {
-    src: photo4Asset.url,
-    alt: "Elderly woman walking through a sunlit Mediterranean alley",
-    orientation: "landscape",
-  },
-  {
-    src: photo5Asset.url,
-    alt: "Artisanal ceramic cup on marble surface",
-    orientation: "portrait",
-  },
-  {
-    src: photo6Asset.url,
-    alt: "Urban street at blue hour with wet pavement reflections",
-    orientation: "landscape",
-  },
-];
 
 function Index() {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
