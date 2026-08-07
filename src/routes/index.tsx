@@ -1,14 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect, useState, useCallback } from "react";
 
-import photo1Asset from "../assets/photo-1.jpg.asset.json";
-import photo2Asset from "../assets/photo-2.jpg.asset.json";
-import photo3Asset from "../assets/photo-3.jpg.asset.json";
-import photo4Asset from "../assets/photo-4.jpg.asset.json";
-import photo5Asset from "../assets/photo-5.jpg.asset.json";
-import photo6Asset from "../assets/photo-6.jpg.asset.json";
+import { listPhotos } from "@/lib/photos.functions";
+
+const photosQueryOptions = queryOptions({
+  queryKey: ["photos"],
+  queryFn: () => listPhotos(),
+});
 
 export const Route = createFileRoute("/")({
+  loader: ({ context }) => context.queryClient.ensureQueryData(photosQueryOptions),
   head: () => ({
     meta: [
       { title: "Gergely Verhoczki — Photography" },
@@ -22,48 +24,12 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-type Photo = {
-  src: string;
-  alt: string;
-  orientation: "portrait" | "landscape";
-};
-
-const photos: Photo[] = [
-  {
-    src: photo1Asset.url,
-    alt: "Pedestrians with umbrellas on a wet Parisian cobblestone street",
-    orientation: "portrait",
-  },
-  {
-    src: photo2Asset.url,
-    alt: "Intimate portrait in warm window light",
-    orientation: "landscape",
-  },
-  {
-    src: photo3Asset.url,
-    alt: "Brutalist concrete architecture with strong geometric shadows",
-    orientation: "portrait",
-  },
-  {
-    src: photo4Asset.url,
-    alt: "Elderly woman walking through a sunlit Mediterranean alley",
-    orientation: "landscape",
-  },
-  {
-    src: photo5Asset.url,
-    alt: "Artisanal ceramic cup on marble surface",
-    orientation: "portrait",
-  },
-  {
-    src: photo6Asset.url,
-    alt: "Urban street at blue hour with wet pavement reflections",
-    orientation: "landscape",
-  },
-];
 
 function Index() {
+  const { data: photos } = useSuspenseQuery(photosQueryOptions);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [isClosing, setIsClosing] = useState(false);
+
 
   const openLightbox = (index: number) => {
     setIsClosing(false);
@@ -81,12 +47,13 @@ function Index() {
   const goNext = useCallback(() => {
     if (activeIndex === null) return;
     setActiveIndex((activeIndex + 1) % photos.length);
-  }, [activeIndex]);
+  }, [activeIndex, photos.length]);
 
   const goPrev = useCallback(() => {
     if (activeIndex === null) return;
     setActiveIndex((activeIndex - 1 + photos.length) % photos.length);
-  }, [activeIndex]);
+  }, [activeIndex, photos.length]);
+
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -149,23 +116,26 @@ function Index() {
             </p>
           </div>
 
-          <button
-            onClick={() => openLightbox(0)}
-            className="group relative mt-16 block w-full cursor-zoom-in overflow-hidden rounded-sm"
-            aria-label="Open featured photograph"
-          >
-            <img
-              src={photos[0]!.src}
-              alt={photos[0]!.alt}
-              width={1600}
-              height={1067}
-              className="aspect-[3/2] w-full object-cover transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.02]"
-              loading="eager"
-            />
-            <div className="pointer-events-none absolute inset-0 flex items-end justify-end bg-gradient-to-t from-black/20 to-transparent p-6 opacity-0 transition-opacity duration-300 group-hover:opacity-100 md:p-10">
-              <span className="rounded-full border border-white/40 px-4 py-2 text-sm text-white">View</span>
-            </div>
-          </button>
+          {photos[0] && (
+            <button
+              onClick={() => openLightbox(0)}
+              className="group relative mt-16 block w-full cursor-zoom-in overflow-hidden rounded-sm"
+              aria-label="Open featured photograph"
+            >
+              <img
+                src={photos[0].src}
+                alt={photos[0].alt}
+                width={1600}
+                height={1067}
+                className="aspect-[3/2] w-full object-cover transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.02]"
+                loading="eager"
+              />
+              <div className="pointer-events-none absolute inset-0 flex items-end justify-end bg-gradient-to-t from-black/20 to-transparent p-6 opacity-0 transition-opacity duration-300 group-hover:opacity-100 md:p-10">
+                <span className="rounded-full border border-white/40 px-4 py-2 text-sm text-white">View</span>
+              </div>
+            </button>
+          )}
+
         </div>
       </section>
 
@@ -188,8 +158,9 @@ function Index() {
                 <img
                   src={photo.src}
                   alt={photo.alt}
-                  width={photo.orientation === "portrait" ? 1200 : 1600}
-                  height={photo.orientation === "portrait" ? 1600 : 1200}
+                  width={1600}
+                  height={1067}
+
                   loading="lazy"
                   className="h-full w-full object-cover transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.03]"
                 />
