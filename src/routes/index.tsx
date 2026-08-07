@@ -47,12 +47,13 @@ function Index() {
   const goNext = useCallback(() => {
     if (activeIndex === null) return;
     setActiveIndex((activeIndex + 1) % photos.length);
-  }, [activeIndex]);
+  }, [activeIndex, photos.length]);
 
   const goPrev = useCallback(() => {
     if (activeIndex === null) return;
     setActiveIndex((activeIndex - 1 + photos.length) % photos.length);
-  }, [activeIndex]);
+  }, [activeIndex, photos.length]);
+
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
