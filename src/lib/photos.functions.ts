@@ -49,23 +49,10 @@ type PhotoRow = {
   sort_order: number;
 };
 
-async function toGalleryPhotos(
-  client: ReturnType<typeof createPublicClient>,
-  rows: PhotoRow[],
-): Promise<GalleryPhoto[]> {
-  const storagePaths = rows.map((r) => r.storage_path).filter((p): p is string => !!p);
-
-  const signed = new Map<string, string>();
-  if (storagePaths.length > 0) {
-    const { data } = await client.storage.from("photos").createSignedUrls(storagePaths, SIGNED_URL_TTL);
-    for (const entry of data ?? []) {
-      if (entry.path && entry.signedUrl) signed.set(entry.path, entry.signedUrl);
-    }
-  }
-
+function toGalleryPhotos(rows: PhotoRow[]): GalleryPhoto[] {
   return rows.map((row) => ({
     id: row.id,
-    src: row.storage_path ? (signed.get(row.storage_path) ?? "") : row.url,
+    src: row.storage_path ? publicUrlFor(row.storage_path) : row.url,
     alt: row.alt,
     sortOrder: row.sort_order,
     storagePath: row.storage_path,
@@ -81,8 +68,9 @@ export const listPhotos = createServerFn({ method: "GET" }).handler(async () => 
     .order("created_at", { ascending: true });
 
   if (error) throw new Error(error.message);
-  return toGalleryPhotos(client, (data ?? []) as PhotoRow[]);
+  return toGalleryPhotos((data ?? []) as PhotoRow[]);
 });
+
 
 export const getIsAdmin = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
