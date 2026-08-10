@@ -13,7 +13,15 @@ export type GalleryPhoto = {
   storagePath: string | null;
 };
 
-const SIGNED_URL_TTL = 60 * 60 * 24 * 7;
+/** Permanent public URL for an object in the public `photos` bucket. */
+function publicUrlFor(storagePath: string) {
+  const base = (process.env["SUPABASE_URL"] ?? "").replace(/\/$/, "");
+  return `${base}/storage/v1/object/public/photos/${storagePath
+    .split("/")
+    .map(encodeURIComponent)
+    .join("/")}`;
+}
+
 
 function createPublicClient() {
   const key = process.env["SUPABASE_PUBLISHABLE_KEY"]!;
@@ -41,23 +49,10 @@ type PhotoRow = {
   sort_order: number;
 };
 
-async function toGalleryPhotos(
-  client: ReturnType<typeof createPublicClient>,
-  rows: PhotoRow[],
-): Promise<GalleryPhoto[]> {
-  const storagePaths = rows.map((r) => r.storage_path).filter((p): p is string => !!p);
-
-  const signed = new Map<string, string>();
-  if (storagePaths.length > 0) {
-    const { data } = await client.storage.from("photos").createSignedUrls(storagePaths, SIGNED_URL_TTL);
-    for (const entry of data ?? []) {
-      if (entry.path && entry.signedUrl) signed.set(entry.path, entry.signedUrl);
-    }
-  }
-
+function toGalleryPhotos(rows: PhotoRow[]): GalleryPhoto[] {
   return rows.map((row) => ({
     id: row.id,
-    src: row.storage_path ? (signed.get(row.storage_path) ?? "") : row.url,
+    src: row.storage_path ? publicUrlFor(row.storage_path) : row.url,
     alt: row.alt,
     sortOrder: row.sort_order,
     storagePath: row.storage_path,
@@ -73,8 +68,9 @@ export const listPhotos = createServerFn({ method: "GET" }).handler(async () => 
     .order("created_at", { ascending: true });
 
   if (error) throw new Error(error.message);
-  return toGalleryPhotos(client, (data ?? []) as PhotoRow[]);
+  return toGalleryPhotos((data ?? []) as PhotoRow[]);
 });
+
 
 export const getIsAdmin = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -161,23 +157,6 @@ export const listPhotosForAdmin = createServerFn({ method: "GET" })
       .order("created_at", { ascending: true });
     if (error) throw new Error(error.message);
 
-    const rows = (data ?? []) as PhotoRow[];
-    const paths = rows.map((r) => r.storage_path).filter((p): p is string => !!p);
-    const signed = new Map<string, string>();
-    if (paths.length > 0) {
-      const { data: urls } = await context.supabase.storage
-        .from("photos")
-        .createSignedUrls(paths, SIGNED_URL_TTL);
-      for (const entry of urls ?? []) {
-        if (entry.path && entry.signedUrl) signed.set(entry.path, entry.signedUrl);
-      }
-    }
-
-    return rows.map((row) => ({
-      id: row.id,
-      src: row.storage_path ? (signed.get(row.storage_path) ?? "") : row.url,
-      alt: row.alt,
-      sortOrder: row.sort_order,
-      storagePath: row.storage_path,
-    })) satisfies GalleryPhoto[];
+    return toGalleryPhotos((data ?? []) as PhotoRow[]);
   });
+
