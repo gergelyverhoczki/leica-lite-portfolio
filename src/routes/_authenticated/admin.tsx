@@ -4,7 +4,6 @@ import { useServerFn } from "@tanstack/react-start";
 import { useRef, useState } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
-import { compressImage } from "@/lib/compress-image";
 import {
   addPhoto,
   deletePhoto,
@@ -86,15 +85,11 @@ function AdminPage() {
 
     try {
       for (const file of list) {
-        const optimised = await compressImage(file);
-        const path = `${crypto.randomUUID()}.jpg`;
+        const extension = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
+        const path = `${crypto.randomUUID()}.${extension}`;
         const { error: uploadError } = await supabase.storage
           .from("photos")
-          .upload(path, optimised, {
-            contentType: "image/jpeg",
-            upsert: false,
-            cacheControl: "31536000",
-          });
+          .upload(path, file, { contentType: file.type, upsert: false });
         if (uploadError) throw new Error(uploadError.message);
 
         await runAddPhoto({
@@ -102,7 +97,6 @@ function AdminPage() {
         });
         nextOrder += 1;
       }
-
       setMessage(`${list.length} photo${list.length > 1 ? "s" : ""} uploaded.`);
       await queryClient.invalidateQueries({ queryKey: ["admin-photos"] });
     } catch (err) {
