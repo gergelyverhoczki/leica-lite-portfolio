@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useRef, useState } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
+import { compressImage } from "@/lib/compress-image";
 import {
   addPhoto,
   deletePhoto,
