@@ -157,23 +157,6 @@ export const listPhotosForAdmin = createServerFn({ method: "GET" })
       .order("created_at", { ascending: true });
     if (error) throw new Error(error.message);
 
-    const rows = (data ?? []) as PhotoRow[];
-    const paths = rows.map((r) => r.storage_path).filter((p): p is string => !!p);
-    const signed = new Map<string, string>();
-    if (paths.length > 0) {
-      const { data: urls } = await context.supabase.storage
-        .from("photos")
-        .createSignedUrls(paths, SIGNED_URL_TTL);
-      for (const entry of urls ?? []) {
-        if (entry.path && entry.signedUrl) signed.set(entry.path, entry.signedUrl);
-      }
-    }
-
-    return rows.map((row) => ({
-      id: row.id,
-      src: row.storage_path ? (signed.get(row.storage_path) ?? "") : row.url,
-      alt: row.alt,
-      sortOrder: row.sort_order,
-      storagePath: row.storage_path,
-    })) satisfies GalleryPhoto[];
+    return toGalleryPhotos((data ?? []) as PhotoRow[]);
   });
+
