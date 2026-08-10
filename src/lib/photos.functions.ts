@@ -13,7 +13,15 @@ export type GalleryPhoto = {
   storagePath: string | null;
 };
 
-const SIGNED_URL_TTL = 60 * 60 * 24 * 7;
+/** Permanent public URL for an object in the public `photos` bucket. */
+function publicUrlFor(storagePath: string) {
+  const base = (process.env["SUPABASE_URL"] ?? "").replace(/\/$/, "");
+  return `${base}/storage/v1/object/public/photos/${storagePath
+    .split("/")
+    .map(encodeURIComponent)
+    .join("/")}`;
+}
+
 
 function createPublicClient() {
   const key = process.env["SUPABASE_PUBLISHABLE_KEY"]!;
