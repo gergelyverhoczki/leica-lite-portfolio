@@ -9,26 +9,79 @@ const photosQueryOptions = queryOptions({
   queryFn: () => listPhotos(),
 });
 
+const DESCRIPTION =
+  "A minimalist photography portfolio inspired by the precision and restraint of Leica.";
+
 export const Route = createFileRoute("/")({
   loader: ({ context }) => context.queryClient.ensureQueryData(photosQueryOptions),
-  head: () => ({
-    meta: [
-      { title: "Gergely Verhoczki — Photography" },
-      { name: "description", content: "A minimalist photography portfolio inspired by the precision and restraint of Leica." },
-      { property: "og:title", content: "Gergely Verhoczki — Photography" },
-      { property: "og:description", content: "A minimalist photography portfolio inspired by the precision and restraint of Leica." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
-    ],
-  }),
+  head: ({ loaderData }) => {
+    const cover = loaderData?.find((photo) => photo.src.startsWith("https://"))?.src;
+
+    return {
+      meta: [
+        { title: "Gergely Verhoczki — Photography" },
+        { name: "description", content: DESCRIPTION },
+        { property: "og:title", content: "Gergely Verhoczki — Photography" },
+        { property: "og:description", content: DESCRIPTION },
+        { property: "og:type", content: "website" },
+        { property: "og:url", content: "/" },
+        { name: "twitter:card", content: "summary_large_image" },
+        ...(cover
+          ? [
+              { property: "og:image", content: cover },
+              { name: "twitter:image", content: cover },
+            ]
+          : []),
+      ],
+      links: [{ rel: "canonical", href: "/" }],
+      scripts: [
+        {
+          type: "application/ld+json",
+          children: JSON.stringify({
+            "@context": "https://schema.org",
+            "@graph": [
+              {
+                "@type": "Person",
+                name: "Gergely Verhoczki",
+                jobTitle: "Photographer",
+                description: DESCRIPTION,
+                email: "mailto:hello@verhoczki.com",
+                ...(cover ? { image: cover } : {}),
+              },
+              {
+                "@type": "ImageGallery",
+                name: "Gergely Verhoczki — Selected Work",
+                description: DESCRIPTION,
+                author: { "@type": "Person", name: "Gergely Verhoczki" },
+                image: (loaderData ?? [])
+                  .filter((photo) => photo.src.startsWith("https://"))
+                  .map((photo) => ({
+                    "@type": "ImageObject",
+                    contentUrl: photo.src,
+                    ...(photo.alt ? { description: photo.alt } : {}),
+                  })),
+              },
+            ],
+          }),
+        },
+      ],
+    };
+  },
   component: Index,
 });
 
+
+const NAV_LINKS = [
+  { href: "#work", label: "Work" },
+  { href: "#about", label: "About" },
+  { href: "#contact", label: "Contact" },
+];
 
 function Index() {
   const { data: photos } = useSuspenseQuery(photosQueryOptions);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [isClosing, setIsClosing] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
 
   const openLightbox = (index: number) => {
@@ -88,17 +141,55 @@ function Index() {
             <span className="font-heading text-lg font-medium tracking-tight">Gergely Verhoczki</span>
           </Link>
           <nav className="hidden items-center gap-8 text-sm font-medium md:flex">
-            <a href="#work" className="story-link text-muted-foreground transition-colors hover:text-foreground">
-              Work
-            </a>
-            <a href="#about" className="story-link text-muted-foreground transition-colors hover:text-foreground">
-              About
-            </a>
-            <a href="#contact" className="story-link text-muted-foreground transition-colors hover:text-foreground">
-              Contact
-            </a>
+            {NAV_LINKS.map((link) => (
+              <a
+                key={link.href}
+                href={link.href}
+                className="story-link text-muted-foreground transition-colors hover:text-foreground"
+              >
+                {link.label}
+              </a>
+            ))}
           </nav>
+
+          <button
+            onClick={() => setMenuOpen((open) => !open)}
+            className="-mr-2 p-2 text-foreground md:hidden"
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={menuOpen}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+              {menuOpen ? (
+                <>
+                  <path d="M18 6 6 18" />
+                  <path d="m6 6 12 12" />
+                </>
+              ) : (
+                <>
+                  <path d="M3 7h18" />
+                  <path d="M3 17h18" />
+                </>
+              )}
+            </svg>
+          </button>
         </div>
+
+        {menuOpen && (
+          <nav className="border-t border-border bg-background md:hidden">
+            <div className="mx-auto flex max-w-7xl flex-col px-6 py-2">
+              {NAV_LINKS.map((link) => (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setMenuOpen(false)}
+                  className="border-b border-border/60 py-4 font-heading text-lg font-medium tracking-tight last:border-b-0"
+                >
+                  {link.label}
+                </a>
+              ))}
+            </div>
+          </nav>
+        )}
       </header>
 
       {/* Hero */}
