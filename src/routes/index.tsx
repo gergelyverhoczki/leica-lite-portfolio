@@ -12,6 +12,9 @@ const photosQueryOptions = queryOptions({
 const DESCRIPTION =
   "A minimalist photography portfolio inspired by the precision and restraint of Leica.";
 
+// Keep in sync with BASE_URL in src/routes/sitemap[.]xml.ts
+const SITE_URL = "https://project--65e919e4-882b-439d-90bd-79f56c3e686d.lovable.app";
+
 export const Route = createFileRoute("/")({
   loader: ({ context }) => context.queryClient.ensureQueryData(photosQueryOptions),
   head: ({ loaderData }) => {
@@ -24,7 +27,7 @@ export const Route = createFileRoute("/")({
         { property: "og:title", content: "Gergely Verhoczki — Photography" },
         { property: "og:description", content: DESCRIPTION },
         { property: "og:type", content: "website" },
-        { property: "og:url", content: "/" },
+        { property: "og:url", content: `${SITE_URL}/` },
         { name: "twitter:card", content: "summary_large_image" },
         ...(cover
           ? [
@@ -33,7 +36,7 @@ export const Route = createFileRoute("/")({
             ]
           : []),
       ],
-      links: [{ rel: "canonical", href: "/" }],
+      links: [{ rel: "canonical", href: `${SITE_URL}/` }],
       scripts: [
         {
           type: "application/ld+json",
