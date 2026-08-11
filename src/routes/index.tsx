@@ -27,7 +27,7 @@ export const Route = createFileRoute("/")({
         { property: "og:title", content: "Gergely Verhoczki — Photography" },
         { property: "og:description", content: DESCRIPTION },
         { property: "og:type", content: "website" },
-        { property: "og:url", content: "/" },
+        { property: "og:url", content: `${SITE_URL}/` },
         { name: "twitter:card", content: "summary_large_image" },
         ...(cover
           ? [
@@ -36,7 +36,7 @@ export const Route = createFileRoute("/")({
             ]
           : []),
       ],
-      links: [{ rel: "canonical", href: "/" }],
+      links: [{ rel: "canonical", href: `${SITE_URL}/` }],
       scripts: [
         {
           type: "application/ld+json",

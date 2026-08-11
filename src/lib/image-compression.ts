@@ -4,7 +4,14 @@ const MIN_QUALITY = 0.5;
 
 async function loadBitmap(file: File): Promise<ImageBitmap | HTMLImageElement> {
   if (typeof createImageBitmap === "function") {
-    return createImageBitmap(file);
+    try {
+      // `from-image` applies the EXIF orientation, so portrait phone photos
+      // stay upright (and the bitmap reports already-rotated dimensions).
+      return await createImageBitmap(file, { imageOrientation: "from-image" });
+    } catch {
+      // Older browsers reject the options bag; fall through to <img>, which
+      // applies EXIF orientation by default (image-orientation: from-image).
+    }
   }
   const url = URL.createObjectURL(file);
   try {
