@@ -13,8 +13,6 @@ export type GalleryPhoto = {
   storagePath: string | null;
 };
 
-const SIGNED_URL_TTL = 60 * 60 * 24 * 7;
-
 function createPublicClient() {
   const key = process.env["SUPABASE_PUBLISHABLE_KEY"]!;
   const url = process.env["SUPABASE_URL"]!;
@@ -41,23 +39,17 @@ type PhotoRow = {
   sort_order: number;
 };
 
-async function toGalleryPhotos(
+function publicUrl(client: ReturnType<typeof createPublicClient>, path: string): string {
+  return client.storage.from("photos").getPublicUrl(path).data.publicUrl;
+}
+
+function toGalleryPhotos(
   client: ReturnType<typeof createPublicClient>,
   rows: PhotoRow[],
-): Promise<GalleryPhoto[]> {
-  const storagePaths = rows.map((r) => r.storage_path).filter((p): p is string => !!p);
-
-  const signed = new Map<string, string>();
-  if (storagePaths.length > 0) {
-    const { data } = await client.storage.from("photos").createSignedUrls(storagePaths, SIGNED_URL_TTL);
-    for (const entry of data ?? []) {
-      if (entry.path && entry.signedUrl) signed.set(entry.path, entry.signedUrl);
-    }
-  }
-
+): GalleryPhoto[] {
   return rows.map((row) => ({
     id: row.id,
-    src: row.storage_path ? (signed.get(row.storage_path) ?? "") : row.url,
+    src: row.storage_path ? publicUrl(client, row.storage_path) : row.url,
     alt: row.alt,
     sortOrder: row.sort_order,
     storagePath: row.storage_path,
@@ -162,20 +154,11 @@ export const listPhotosForAdmin = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
 
     const rows = (data ?? []) as PhotoRow[];
-    const paths = rows.map((r) => r.storage_path).filter((p): p is string => !!p);
-    const signed = new Map<string, string>();
-    if (paths.length > 0) {
-      const { data: urls } = await context.supabase.storage
-        .from("photos")
-        .createSignedUrls(paths, SIGNED_URL_TTL);
-      for (const entry of urls ?? []) {
-        if (entry.path && entry.signedUrl) signed.set(entry.path, entry.signedUrl);
-      }
-    }
+    const publicClient = createPublicClient();
 
     return rows.map((row) => ({
       id: row.id,
-      src: row.storage_path ? (signed.get(row.storage_path) ?? "") : row.url,
+      src: row.storage_path ? publicUrl(publicClient, row.storage_path) : row.url,
       alt: row.alt,
       sortOrder: row.sort_order,
       storagePath: row.storage_path,
