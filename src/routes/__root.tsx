@@ -77,9 +77,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Elena Voss — Photography" },
+      { title: "Gergely Verhoczki — Photography" },
       { name: "description", content: "A minimalist photography portfolio inspired by the precision and restraint of Leica." },
-      { name: "author", content: "Elena Voss" },
+      { name: "author", content: "Gergely Verhoczki" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
