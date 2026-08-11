@@ -309,7 +309,7 @@ function Index() {
                 href="mailto:hello@verhoczki.com"
                 className="block font-heading text-2xl font-medium transition-colors hover:text-leica-red md:text-3xl"
               >
-                hello@verhoczki.com
+                gergely.verhoczki@gmail.com
               </a>
               <div className="flex flex-wrap gap-6 text-sm font-medium text-muted-foreground">
                 <a href="#" className="story-link transition-colors hover:text-foreground">Instagram</a>
