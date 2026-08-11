@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useRef, useState } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
+import { compressImage } from "@/lib/image-compression";
 import {
   addPhoto,
   deletePhoto,
@@ -84,7 +85,8 @@ function AdminPage() {
       (photosQuery.data ?? []).reduce((max, p) => Math.max(max, p.sortOrder), 0) + 1;
 
     try {
-      for (const file of list) {
+      for (const original of list) {
+        const file = await compressImage(original);
         const extension = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
         const path = `${crypto.randomUUID()}.${extension}`;
         const { error: uploadError } = await supabase.storage
@@ -167,9 +169,11 @@ function AdminPage() {
           }`}
         >
           <p className="font-heading text-base font-medium">
-            {uploading ? "Uploading…" : "Drop photographs here"}
+            {uploading ? "Optimising & uploading…" : "Drop photographs here"}
           </p>
-          <p className="mt-2 text-sm text-muted-foreground">or click to choose files</p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            or click to choose files — resized to 1600px, compressed to ~200KB
+          </p>
           <input
             ref={fileInput}
             type="file"
