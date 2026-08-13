@@ -3,6 +3,8 @@ import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect, useState, useCallback, useRef } from "react";
 
 import { listPhotos } from "@/lib/photos.functions";
+import { chunk, GalleryTile } from "@/components/gallery-tile";
+
 
 const photosQueryOptions = queryOptions({
   queryKey: ["photos"],
