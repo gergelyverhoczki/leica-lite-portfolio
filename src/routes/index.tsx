@@ -234,36 +234,49 @@ function Index() {
       </section>
 
       {/* Gallery */}
-      <section id="work" className="px-6 py-20 md:px-10 md:py-32">
-        <div className="mx-auto max-w-7xl">
-          <div className="mb-12 flex items-end justify-between md:mb-16">
+      <section id="work" className="px-3 py-20 md:px-6 md:py-28">
+        <div className="mx-auto w-full max-w-[1800px]">
+          <div className="mb-10 flex items-end justify-between px-3 md:mb-14 md:px-4">
             <h2 className="font-heading text-2xl font-medium tracking-tight md:text-3xl">Selected Work</h2>
             <span className="text-sm text-muted-foreground">{photos.length} photographs</span>
           </div>
 
-          <div className="grid grid-cols-1 gap-1 sm:grid-cols-2 lg:grid-cols-3">
-            {photos.map((photo, index) => (
-              <button
-                key={index}
-                onClick={() => openLightbox(index)}
-                className="group relative block aspect-[3/2] w-full cursor-zoom-in overflow-hidden"
-                aria-label={`Open photograph ${index + 1}`}
-              >
-                <img
-                  src={photo.src}
-                  alt={photo.alt}
-                  width={1600}
-                  height={1067}
-
-                  loading="lazy"
-                  className="h-full w-full object-cover transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.03]"
-                />
-                <div className="pointer-events-none absolute inset-0 bg-black/0 transition-colors duration-300 group-hover:bg-black/10" />
-              </button>
-            ))}
+          <div className="space-y-2 md:space-y-3">
+            {chunk(photos.slice(0, visibleCount), 7).map((group, gi) => {
+              const [hero, ...rest] = group;
+              return (
+                <div key={gi} className="space-y-2 md:space-y-3">
+                  {hero && (
+                    <GalleryTile
+                      photo={hero}
+                      index={gi * 7}
+                      onOpen={openLightbox}
+                      priority={gi === 0}
+                    />
+                  )}
+                  {rest.length > 0 && (
+                    <div className="columns-1 gap-2 sm:columns-2 lg:columns-3 md:gap-3 [&>*]:mb-2 md:[&>*]:mb-3">
+                      {rest.map((photo, i) => (
+                        <GalleryTile
+                          key={photo.id}
+                          photo={photo}
+                          index={gi * 7 + i + 1}
+                          onOpen={openLightbox}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
+
+          {visibleCount < photos.length && (
+            <div ref={sentinelRef} className="h-24 w-full" aria-hidden="true" />
+          )}
         </div>
       </section>
+
 
       {/* About */}
       <section id="about" className="border-t border-border px-6 py-20 md:px-10 md:py-32">
