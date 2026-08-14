@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect, useState, useCallback, useRef } from "react";
+import { Send } from "lucide-react";
 
 import { listPhotos } from "@/lib/photos.functions";
 import { chunk, GalleryTile } from "@/components/gallery-tile";
@@ -352,6 +353,15 @@ function Index() {
                 <a href="#" className="story-link transition-colors hover:text-foreground">Instagram</a>
                 <a href="#" className="story-link transition-colors hover:text-foreground">Prints</a>
                 <a href="#" className="story-link transition-colors hover:text-foreground">Newsletter</a>
+                <a
+                  href="https://t.me/gergover"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="story-link inline-flex items-center transition-colors hover:text-foreground"
+                  aria-label="Telegram"
+                >
+                  <Send size={16} strokeWidth={1.5} />
+                </a>
               </div>
             </div>
           </div>
