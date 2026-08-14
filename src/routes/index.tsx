@@ -15,7 +15,7 @@ const DESCRIPTION =
   "A minimalist photography portfolio inspired by the precision and restraint of Leica.";
 
 // Keep in sync with BASE_URL in src/routes/sitemap[.]xml.ts
-const SITE_URL = "https://project--65e919e4-882b-439d-90bd-79f56c3e686d.lovable.app";
+const SITE_URL = "https://gergelyverhoczki.com";
 
 export const Route = createFileRoute("/")({
   loader: ({ context }) => context.queryClient.ensureQueryData(photosQueryOptions),
@@ -265,14 +265,15 @@ function Index() {
           </div>
 
           <div className="space-y-2 md:space-y-3">
-            {chunk(photos.slice(0, visibleCount), 7).map((group, gi) => {
+            {chunk(photos.slice(1, visibleCount), 7).map((group, gi) => {
               const [hero, ...rest] = group;
+              const baseIndex = gi * 7 + 1;
               return (
                 <div key={gi} className="space-y-2 md:space-y-3">
                   {hero && (
                     <GalleryTile
                       photo={hero}
-                      index={gi * 7}
+                      index={baseIndex}
                       onOpen={openLightbox}
                       priority={gi === 0}
                     />
@@ -283,7 +284,7 @@ function Index() {
                         <GalleryTile
                           key={photo.id}
                           photo={photo}
-                          index={gi * 7 + i + 1}
+                          index={baseIndex + i + 1}
                           onOpen={openLightbox}
                         />
                       ))}

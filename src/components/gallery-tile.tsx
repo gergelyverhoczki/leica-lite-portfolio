@@ -28,7 +28,7 @@ export function GalleryTile({
         alt={photo.alt}
         loading={priority ? "eager" : "lazy"}
         decoding="async"
-        className="block h-auto w-full object-contain transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.02]"
+        className="block aspect-[3/2] h-auto w-full object-contain transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.02]"
       />
     </button>
   );
