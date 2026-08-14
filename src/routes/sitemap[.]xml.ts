@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
 
 // Update this single constant when a custom domain is connected.
-const BASE_URL = "https://project--65e919e4-882b-439d-90bd-79f56c3e686d.lovable.app";
+const BASE_URL = "https://gergelyverhoczki.com";
 
 interface SitemapEntry {
   path: string;
