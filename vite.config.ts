@@ -12,4 +12,11 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  nitro: {
+    cloudflare: {
+      wrangler: {
+        keep_vars: true,
+      },
+    },
+  },
 });
