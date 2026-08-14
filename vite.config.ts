@@ -12,4 +12,13 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  nitro: {
+    cloudflare: {
+      // @ts-expect-error Nitro supports this property for wrangler.json generation,
+      // but the Lovable config wrapper's types don't expose it yet.
+      wrangler: {
+        keep_vars: true,
+      },
+    },
+  },
 });
