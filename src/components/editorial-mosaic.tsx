@@ -47,38 +47,85 @@ function useAspectRatios(photos: MosaicPhotoItem[]) {
 }
 
 type Entry = { photo: MosaicPhotoItem; index: number; ratio: number };
-type Recipe = { count: number; frac: number; align: "start" | "center" | "end"; space: number };
-
-/** Deterministic editorial rhythm — varied spreads, never a repeating 50/50 cadence. */
-const DESKTOP_RECIPES: Recipe[] = [
-  { count: 1, frac: 1, align: "center", space: 1.6 }, // full-width anchor
-  { count: 2, frac: 1, align: "start", space: 1 },
-  { count: 1, frac: 0.52, align: "start", space: 1.8 }, // single quiet moment
-  { count: 3, frac: 1, align: "start", space: 1 },
-  { count: 2, frac: 0.86, align: "end", space: 1.4 },
-  { count: 1, frac: 0.72, align: "center", space: 1.8 },
-  { count: 3, frac: 1, align: "start", space: 1 },
-  { count: 2, frac: 1, align: "start", space: 1.6 },
-  { count: 1, frac: 0.62, align: "end", space: 1.8 },
-  { count: 2, frac: 0.92, align: "start", space: 1 },
-];
-
-const TABLET_RECIPES: Recipe[] = [
-  { count: 1, frac: 1, align: "center", space: 1.4 },
-  { count: 2, frac: 1, align: "start", space: 1 },
-  { count: 1, frac: 0.7, align: "start", space: 1.6 },
-  { count: 2, frac: 0.92, align: "end", space: 1 },
-  { count: 1, frac: 0.85, align: "center", space: 1.6 },
-  { count: 2, frac: 1, align: "start", space: 1 },
-];
 
 type Row = {
   entries: Entry[];
   height: number;
-  frac: number;
-  align: Recipe["align"];
+  width: number; // px — actual composed width of the row
+  align: "start" | "center" | "end";
   spaceAfter: number;
 };
+
+type ModeConfig = {
+  target: number; // ideal row height in px
+  maxHeight: number; // never let a row tower over the viewport
+  maxCount: number; // max images per row
+  soloEvery: number; // cadence of intentional single-image compositions
+  heroEvery: number; // cadence of full-width anchors
+  soloMaxWidth: number; // fraction of container for an editorial solo
+  portraitSoloMaxWidth: number; // narrower cap for tall images
+};
+
+const MODES: Record<"mobile" | "tablet" | "desktop", ModeConfig> = {
+  mobile: {
+    target: 420,
+    maxHeight: 620,
+    maxCount: 1,
+    soloEvery: 0,
+    heroEvery: 0,
+    soloMaxWidth: 1,
+    portraitSoloMaxWidth: 0.92,
+  },
+  tablet: {
+    target: 460,
+    maxHeight: 760,
+    maxCount: 2,
+    soloEvery: 5,
+    heroEvery: 7,
+    soloMaxWidth: 0.82,
+    portraitSoloMaxWidth: 0.6,
+  },
+  desktop: {
+    target: 540,
+    maxHeight: 900,
+    maxCount: 3,
+    soloEvery: 6,
+    heroEvery: 9,
+    soloMaxWidth: 0.74,
+    portraitSoloMaxWidth: 0.48,
+  },
+};
+
+/**
+ * Justified layout: each row's shared height is derived from the row's aspect
+ * ratios so that (sum of scaled widths) + gaps == the row width exactly.
+ */
+function layoutRow(
+  slice: Entry[],
+  rowWidth: number,
+  gap: number,
+  cfg: ModeConfig,
+): { height: number; width: number } {
+  const sum = slice.reduce((s, e) => s + e.ratio, 0);
+  const available = rowWidth - gap * (slice.length - 1);
+  let height = available / sum;
+  let width = rowWidth;
+  // Clamping height must shrink the row width too, otherwise a gap appears.
+  if (height > cfg.maxHeight) {
+    height = cfg.maxHeight;
+    width = height * sum + gap * (slice.length - 1);
+  }
+  return { height, width };
+}
+
+function soloWidth(entry: Entry, containerWidth: number, cfg: ModeConfig) {
+  // Panoramas earn the full measure; portraits get a controlled editorial cap.
+  if (entry.ratio >= 1.9) return containerWidth;
+  const frac = entry.ratio < 0.95 ? cfg.portraitSoloMaxWidth : cfg.soloMaxWidth;
+  const byWidth = containerWidth * frac;
+  const byHeight = cfg.maxHeight * entry.ratio;
+  return Math.min(byWidth, byHeight, containerWidth);
+}
 
 function buildRows(
   entries: Entry[],
@@ -86,63 +133,84 @@ function buildRows(
   gap: number,
   mode: "mobile" | "tablet" | "desktop",
 ): Row[] {
-  if (mode === "mobile") {
-    return entries.map((entry, i) => {
-      const portrait = entry.ratio < 0.95;
-      const frac = portrait ? 0.9 : i % 3 === 1 ? 0.88 : 1;
-      const align: Recipe["align"] = portrait ? (i % 2 === 0 ? "start" : "end") : "center";
-      const width = containerWidth * frac;
-      return {
-        entries: [entry],
-        height: width / entry.ratio,
-        frac,
-        align,
-        spaceAfter: portrait ? 1.3 : 1,
-      };
-    });
-  }
-
-  const recipes = mode === "tablet" ? TABLET_RECIPES : DESKTOP_RECIPES;
+  const cfg = MODES[mode];
   const rows: Row[] = [];
   let i = 0;
-  let r = 0;
+  let rowIndex = 0;
 
   while (i < entries.length) {
-    const recipe = recipes[r % recipes.length]!;
-    r += 1;
+    const remaining = entries.length - i;
 
-    let count = Math.min(recipe.count, entries.length - i);
-    const slice = entries.slice(i, i + count);
+    const wantsHero = cfg.heroEvery > 0 && rowIndex % cfg.heroEvery === 0;
+    const wantsSolo = cfg.soloEvery > 0 && rowIndex % cfg.soloEvery === cfg.soloEvery - 1;
+    const first = entries[i]!;
 
-    // Avoid awkwardly thin rows: a trio of wide panoramas gets trimmed to a pair.
-    const ratioSum = slice.reduce((sum, e) => sum + e.ratio, 0);
-    if (count === 3 && ratioSum > 5.4) {
-      count = 2;
-      slice.length = 2;
+    // Intentional single-image composition — explicitly sized, never accidental.
+    if (cfg.maxCount === 1 || wantsHero || wantsSolo || remaining === 1) {
+      const isLast = remaining === 1;
+      let width: number;
+      if (wantsHero && !wantsSolo) {
+        // Full-width anchor, but keep it from towering.
+        width = Math.min(containerWidth, cfg.maxHeight * 1.25 * first.ratio);
+      } else {
+        width = soloWidth(first, containerWidth, cfg);
+      }
+      if (mode === "mobile") {
+        width = first.ratio < 0.95 ? containerWidth * cfg.portraitSoloMaxWidth : containerWidth;
+      }
+      const height = width / first.ratio;
+      rows.push({
+        entries: [first],
+        height,
+        width,
+        align: mode === "mobile" ? "center" : rowIndex % 3 === 1 ? "end" : rowIndex % 3 === 2 ? "start" : "center",
+        spaceAfter: isLast ? 1 : 1.5,
+      });
+      i += 1;
+      rowIndex += 1;
+      continue;
     }
-    // A lone panorama always spans the full width.
-    const frac = count === 1 && slice[0]!.ratio > 2 ? 1 : recipe.frac;
 
-    const sum = slice.reduce((s, e) => s + e.ratio, 0);
-    const available = containerWidth * frac - gap * (count - 1);
-    let height = available / sum;
+    // Greedy justified packing: keep adding images while the resulting shared
+    // row height stays above the target for this breakpoint.
+    let count = 1;
+    let best = 1;
+    let bestDelta = Infinity;
+    while (count <= Math.min(cfg.maxCount, remaining)) {
+      const slice = entries.slice(i, i + count);
+      const sum = slice.reduce((s, e) => s + e.ratio, 0);
+      const height = (containerWidth - gap * (count - 1)) / sum;
+      const delta = Math.abs(height - cfg.target);
+      if (delta < bestDelta) {
+        bestDelta = delta;
+        best = count;
+      }
+      count += 1;
+    }
+    count = best;
 
-    // Keep a single dominant image from towering over the viewport.
-    const maxHeight = mode === "tablet" ? 760 : 900;
-    if (height > maxHeight) height = maxHeight;
+    // Never orphan a single trailing image into an awkward stub row.
+    if (remaining - count === 1 && count > 1 && count < Math.min(cfg.maxCount, remaining)) {
+      count += 1;
+    }
+
+    const slice = entries.slice(i, i + count);
+    const { height, width } = layoutRow(slice, containerWidth, gap, cfg);
 
     rows.push({
       entries: slice,
       height,
-      frac,
-      align: recipe.align,
-      spaceAfter: recipe.space,
+      width,
+      align: width < containerWidth - 1 ? "center" : "start",
+      spaceAfter: 1,
     });
     i += count;
+    rowIndex += 1;
   }
 
   return rows;
 }
+
 
 function MosaicImage({
   entry,
