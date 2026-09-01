@@ -258,9 +258,10 @@ function Index() {
       </section>
 
       {/* Gallery */}
-      <section id="work" className="px-3 py-20 md:px-6 md:py-28">
+      <section id="work" className="px-5 py-20 md:px-6 md:py-28">
         <div className="mx-auto w-full max-w-[1800px]">
-          <div className="mb-10 flex items-end justify-between px-3 md:mb-14 md:px-4">
+          <div className="mb-10 flex items-end justify-between md:mb-14 md:px-4">
+
             <h2 className="font-heading text-2xl font-medium tracking-tight md:text-3xl">Selected Work</h2>
             <span className="text-sm text-muted-foreground">{photos.length} photographs</span>
           </div>
