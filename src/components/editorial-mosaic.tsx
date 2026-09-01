@@ -66,16 +66,9 @@ type ModeConfig = {
   portraitSoloMaxWidth: number; // narrower cap for tall images
 };
 
-const MODES: Record<"mobile" | "tablet" | "desktop", ModeConfig> = {
-  mobile: {
-    target: 420,
-    maxHeight: 620,
-    maxCount: 1,
-    soloEvery: 0,
-    heroEvery: 0,
-    soloMaxWidth: 1,
-    portraitSoloMaxWidth: 0.92,
-  },
+type Mode = "phone" | "compact" | "tablet" | "desktop";
+
+const MODES: Record<"tablet" | "desktop", ModeConfig> = {
   tablet: {
     target: 460,
     maxHeight: 760,
@@ -95,6 +88,106 @@ const MODES: Record<"mobile" | "tablet" | "desktop", ModeConfig> = {
     portraitSoloMaxWidth: 0.48,
   },
 };
+
+/* ------------------------------------------------------------------ *
+ * Mobile composition system (below 768px)
+ * Art-directed rhythm: dominant singles, occasional pairs, occasional
+ * smaller supporting frames. Every size derives from the real ratio.
+ * ------------------------------------------------------------------ */
+
+type MobileConfig = {
+  maxHeight: number; // tallest a single frame may get
+  portraitMaxWidth: number; // portraits stay a touch inside the measure
+  supportWidth: number; // fraction for the smaller supporting frames
+  supportEvery: number; // cadence of supporting frames
+  pairEvery: number; // cadence at which a pair is allowed
+  minPairHeight: number; // a pair is only worth it if both stay this tall
+};
+
+const MOBILE: Record<"phone" | "compact", MobileConfig> = {
+  phone: {
+    maxHeight: 560,
+    portraitMaxWidth: 0.9,
+    supportWidth: 0.62,
+    supportEvery: 7,
+    pairEvery: 5,
+    minPairHeight: 130,
+  },
+  compact: {
+    maxHeight: 660,
+    portraitMaxWidth: 0.86,
+    supportWidth: 0.58,
+    supportEvery: 6,
+    pairEvery: 4,
+    minPairHeight: 170,
+  },
+};
+
+function buildMobileRows(
+  entries: Entry[],
+  containerWidth: number,
+  gap: number,
+  mode: "phone" | "compact",
+): Row[] {
+  const cfg = MOBILE[mode];
+  const rows: Row[] = [];
+  let i = 0;
+  let slot = 0;
+
+  while (i < entries.length) {
+    const first = entries[i]!;
+    const next = entries[i + 1];
+
+    // A pair only earns its place when both frames stay large enough to read.
+    if (next && cfg.pairEvery > 0 && slot % cfg.pairEvery === cfg.pairEvery - 1) {
+      const sum = first.ratio + next.ratio;
+      const height = (containerWidth - gap) / sum;
+      const similar = Math.abs(first.ratio - next.ratio) < 0.65;
+      if (height >= cfg.minPairHeight && similar) {
+        rows.push({
+          entries: [first, next],
+          height,
+          width: containerWidth,
+          align: "start",
+          spaceAfter: 1.2,
+        });
+        i += 2;
+        slot += 1;
+        continue;
+      }
+    }
+
+    // Occasional smaller supporting frame, alternately nudged left / right.
+    const isSupport =
+      cfg.supportEvery > 0 && slot > 0 && slot % cfg.supportEvery === cfg.supportEvery - 1;
+
+    let width: number;
+    if (isSupport) {
+      width = containerWidth * cfg.supportWidth;
+    } else if (first.ratio < 0.95) {
+      width = containerWidth * cfg.portraitMaxWidth;
+    } else {
+      width = containerWidth;
+    }
+
+    // Never let a tall frame run past the comfortable viewing height.
+    const byHeight = cfg.maxHeight * first.ratio;
+    width = Math.min(width, byHeight, containerWidth);
+
+    rows.push({
+      entries: [first],
+      height: width / first.ratio,
+      width,
+      align: isSupport ? (slot % 2 === 0 ? "start" : "end") : "center",
+      spaceAfter: isSupport ? 1.6 : first.ratio < 0.95 ? 1.35 : 1,
+    });
+    i += 1;
+    slot += 1;
+  }
+
+  return rows;
+}
+
 
 /**
  * Justified layout: each row's shared height is derived from the row's aspect
