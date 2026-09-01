@@ -66,16 +66,9 @@ type ModeConfig = {
   portraitSoloMaxWidth: number; // narrower cap for tall images
 };
 
-const MODES: Record<"mobile" | "tablet" | "desktop", ModeConfig> = {
-  mobile: {
-    target: 420,
-    maxHeight: 620,
-    maxCount: 1,
-    soloEvery: 0,
-    heroEvery: 0,
-    soloMaxWidth: 1,
-    portraitSoloMaxWidth: 0.92,
-  },
+type Mode = "phone" | "compact" | "tablet" | "desktop";
+
+const MODES: Record<"tablet" | "desktop", ModeConfig> = {
   tablet: {
     target: 460,
     maxHeight: 760,
@@ -95,6 +88,106 @@ const MODES: Record<"mobile" | "tablet" | "desktop", ModeConfig> = {
     portraitSoloMaxWidth: 0.48,
   },
 };
+
+/* ------------------------------------------------------------------ *
+ * Mobile composition system (below 768px)
+ * Art-directed rhythm: dominant singles, occasional pairs, occasional
+ * smaller supporting frames. Every size derives from the real ratio.
+ * ------------------------------------------------------------------ */
+
+type MobileConfig = {
+  maxHeight: number; // tallest a single frame may get
+  portraitMaxWidth: number; // portraits stay a touch inside the measure
+  supportWidth: number; // fraction for the smaller supporting frames
+  supportEvery: number; // cadence of supporting frames
+  pairEvery: number; // cadence at which a pair is allowed
+  minPairHeight: number; // a pair is only worth it if both stay this tall
+};
+
+const MOBILE: Record<"phone" | "compact", MobileConfig> = {
+  phone: {
+    maxHeight: 560,
+    portraitMaxWidth: 0.9,
+    supportWidth: 0.62,
+    supportEvery: 7,
+    pairEvery: 5,
+    minPairHeight: 130,
+  },
+  compact: {
+    maxHeight: 660,
+    portraitMaxWidth: 0.86,
+    supportWidth: 0.58,
+    supportEvery: 6,
+    pairEvery: 4,
+    minPairHeight: 170,
+  },
+};
+
+function buildMobileRows(
+  entries: Entry[],
+  containerWidth: number,
+  gap: number,
+  mode: "phone" | "compact",
+): Row[] {
+  const cfg = MOBILE[mode];
+  const rows: Row[] = [];
+  let i = 0;
+  let slot = 0;
+
+  while (i < entries.length) {
+    const first = entries[i]!;
+    const next = entries[i + 1];
+
+    // A pair only earns its place when both frames stay large enough to read.
+    if (next && cfg.pairEvery > 0 && slot % cfg.pairEvery === cfg.pairEvery - 1) {
+      const sum = first.ratio + next.ratio;
+      const height = (containerWidth - gap) / sum;
+      const similar = Math.abs(first.ratio - next.ratio) < 0.65;
+      if (height >= cfg.minPairHeight && similar) {
+        rows.push({
+          entries: [first, next],
+          height,
+          width: containerWidth,
+          align: "start",
+          spaceAfter: 1.2,
+        });
+        i += 2;
+        slot += 1;
+        continue;
+      }
+    }
+
+    // Occasional smaller supporting frame, alternately nudged left / right.
+    const isSupport =
+      cfg.supportEvery > 0 && slot > 0 && slot % cfg.supportEvery === cfg.supportEvery - 1;
+
+    let width: number;
+    if (isSupport) {
+      width = containerWidth * cfg.supportWidth;
+    } else if (first.ratio < 0.95) {
+      width = containerWidth * cfg.portraitMaxWidth;
+    } else {
+      width = containerWidth;
+    }
+
+    // Never let a tall frame run past the comfortable viewing height.
+    const byHeight = cfg.maxHeight * first.ratio;
+    width = Math.min(width, byHeight, containerWidth);
+
+    rows.push({
+      entries: [first],
+      height: width / first.ratio,
+      width,
+      align: isSupport ? (slot % 2 === 0 ? "start" : "end") : "center",
+      spaceAfter: isSupport ? 1.6 : first.ratio < 0.95 ? 1.35 : 1,
+    });
+    i += 1;
+    slot += 1;
+  }
+
+  return rows;
+}
+
 
 /**
  * Justified layout: each row's shared height is derived from the row's aspect
@@ -131,7 +224,7 @@ function buildRows(
   entries: Entry[],
   containerWidth: number,
   gap: number,
-  mode: "mobile" | "tablet" | "desktop",
+  mode: "tablet" | "desktop",
 ): Row[] {
   const cfg = MODES[mode];
   const rows: Row[] = [];
@@ -155,17 +248,15 @@ function buildRows(
       } else {
         width = soloWidth(first, containerWidth, cfg);
       }
-      if (mode === "mobile") {
-        width = first.ratio < 0.95 ? containerWidth * cfg.portraitSoloMaxWidth : containerWidth;
-      }
       const height = width / first.ratio;
       rows.push({
         entries: [first],
         height,
         width,
-        align: mode === "mobile" ? "center" : rowIndex % 3 === 1 ? "end" : rowIndex % 3 === 2 ? "start" : "center",
+        align: rowIndex % 3 === 1 ? "end" : rowIndex % 3 === 2 ? "start" : "center",
         spaceAfter: isLast ? 1 : 1.5,
       });
+
       i += 1;
       rowIndex += 1;
       continue;
@@ -277,10 +368,14 @@ export function EditorialMosaic({
   const { ref, width } = useContainerWidth();
   const ratios = useAspectRatios(photos);
 
-  const mode: "mobile" | "tablet" | "desktop" =
-    width < 700 ? "mobile" : width < 1100 ? "tablet" : "desktop";
-  const gap = mode === "mobile" ? 14 : mode === "tablet" ? 18 : 24;
-  const baseSpace = mode === "mobile" ? 26 : mode === "tablet" ? 40 : 56;
+  // The section has 20px mobile margins, so these container thresholds map to
+  // roughly <480px phone, 480–767px compact, then preserve the existing
+  // tablet/desktop composition from 768px upward.
+  const mode: Mode =
+    width < 440 ? "phone" : width < 700 ? "compact" : width < 1100 ? "tablet" : "desktop";
+  const isMobile = mode === "phone" || mode === "compact";
+  const gap = mode === "phone" ? 10 : mode === "compact" ? 14 : mode === "tablet" ? 18 : 24;
+  const baseSpace = mode === "phone" ? 22 : mode === "compact" ? 30 : mode === "tablet" ? 40 : 56;
 
   const rows = useMemo(() => {
     if (width <= 0) return [] as Row[];
@@ -289,8 +384,11 @@ export function EditorialMosaic({
       index: startIndex + i,
       ratio: ratios[photo.id] ?? DEFAULT_RATIO,
     }));
-    return buildRows(entries, width, gap, mode);
-  }, [photos, ratios, width, gap, mode, startIndex]);
+    return isMobile
+      ? buildMobileRows(entries, width, gap, mode as "phone" | "compact")
+      : buildRows(entries, width, gap, mode as "tablet" | "desktop");
+  }, [photos, ratios, width, gap, mode, isMobile, startIndex]);
+
 
   return (
     <div ref={ref} className="w-full">
