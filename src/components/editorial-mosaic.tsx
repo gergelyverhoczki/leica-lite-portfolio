@@ -300,10 +300,10 @@ export function EditorialMosaic({
           className="flex transition-[height] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
           style={{
             gap,
-            width: `${row.frac * 100}%`,
-            marginLeft: row.align === "end" ? "auto" : row.align === "center" ? "auto" : undefined,
-            marginRight:
-              row.align === "start" ? "auto" : row.align === "center" ? "auto" : undefined,
+            width: row.width,
+            maxWidth: "100%",
+            marginLeft: row.align === "end" || row.align === "center" ? "auto" : undefined,
+            marginRight: row.align === "start" || row.align === "center" ? "auto" : undefined,
             marginBottom: ri === rows.length - 1 ? 0 : baseSpace * row.spaceAfter,
           }}
         >
