@@ -224,7 +224,7 @@ function buildRows(
   entries: Entry[],
   containerWidth: number,
   gap: number,
-  mode: "mobile" | "tablet" | "desktop",
+  mode: "tablet" | "desktop",
 ): Row[] {
   const cfg = MODES[mode];
   const rows: Row[] = [];
@@ -248,17 +248,15 @@ function buildRows(
       } else {
         width = soloWidth(first, containerWidth, cfg);
       }
-      if (mode === "mobile") {
-        width = first.ratio < 0.95 ? containerWidth * cfg.portraitSoloMaxWidth : containerWidth;
-      }
       const height = width / first.ratio;
       rows.push({
         entries: [first],
         height,
         width,
-        align: mode === "mobile" ? "center" : rowIndex % 3 === 1 ? "end" : rowIndex % 3 === 2 ? "start" : "center",
+        align: rowIndex % 3 === 1 ? "end" : rowIndex % 3 === 2 ? "start" : "center",
         spaceAfter: isLast ? 1 : 1.5,
       });
+
       i += 1;
       rowIndex += 1;
       continue;
