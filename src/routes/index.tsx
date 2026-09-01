@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { Send } from "lucide-react";
 
 import { listPhotos } from "@/lib/photos.functions";
-import { JustifiedGallery } from "@/components/justified-gallery";
+import { EditorialMosaic } from "@/components/editorial-mosaic";
 
 
 const photosQueryOptions = queryOptions({
@@ -265,7 +265,7 @@ function Index() {
             <span className="text-sm text-muted-foreground">{photos.length} photographs</span>
           </div>
 
-          <JustifiedGallery
+          <EditorialMosaic
             photos={photos.slice(1, visibleCount)}
             startIndex={1}
             onOpen={openLightbox}
