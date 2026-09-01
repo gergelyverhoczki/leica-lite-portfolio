@@ -368,10 +368,11 @@ export function EditorialMosaic({
   const { ref, width } = useContainerWidth();
   const ratios = useAspectRatios(photos);
 
-  // Container-based breakpoints (container ≈ viewport − 40px of margins on
-  // phones): <480 phone, 480–767 compact, 768–1099 tablet, ≥1100 desktop.
+  // The section has 20px mobile margins, so these container thresholds map to
+  // roughly <480px phone, 480–767px compact, then preserve the existing
+  // tablet/desktop composition from 768px upward.
   const mode: Mode =
-    width < 440 ? "phone" : width < 728 ? "compact" : width < 1060 ? "tablet" : "desktop";
+    width < 440 ? "phone" : width < 700 ? "compact" : width < 1100 ? "tablet" : "desktop";
   const isMobile = mode === "phone" || mode === "compact";
   const gap = mode === "phone" ? 10 : mode === "compact" ? 14 : mode === "tablet" ? 18 : 24;
   const baseSpace = mode === "phone" ? 22 : mode === "compact" ? 30 : mode === "tablet" ? 40 : 56;
