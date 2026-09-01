@@ -368,10 +368,13 @@ export function EditorialMosaic({
   const { ref, width } = useContainerWidth();
   const ratios = useAspectRatios(photos);
 
-  const mode: "mobile" | "tablet" | "desktop" =
-    width < 700 ? "mobile" : width < 1100 ? "tablet" : "desktop";
-  const gap = mode === "mobile" ? 14 : mode === "tablet" ? 18 : 24;
-  const baseSpace = mode === "mobile" ? 26 : mode === "tablet" ? 40 : 56;
+  // Container-based breakpoints (container ≈ viewport − 40px of margins on
+  // phones): <480 phone, 480–767 compact, 768–1099 tablet, ≥1100 desktop.
+  const mode: Mode =
+    width < 440 ? "phone" : width < 728 ? "compact" : width < 1060 ? "tablet" : "desktop";
+  const isMobile = mode === "phone" || mode === "compact";
+  const gap = mode === "phone" ? 10 : mode === "compact" ? 14 : mode === "tablet" ? 18 : 24;
+  const baseSpace = mode === "phone" ? 22 : mode === "compact" ? 30 : mode === "tablet" ? 40 : 56;
 
   const rows = useMemo(() => {
     if (width <= 0) return [] as Row[];
@@ -380,8 +383,11 @@ export function EditorialMosaic({
       index: startIndex + i,
       ratio: ratios[photo.id] ?? DEFAULT_RATIO,
     }));
-    return buildRows(entries, width, gap, mode);
-  }, [photos, ratios, width, gap, mode, startIndex]);
+    return isMobile
+      ? buildMobileRows(entries, width, gap, mode as "phone" | "compact")
+      : buildRows(entries, width, gap, mode as "tablet" | "desktop");
+  }, [photos, ratios, width, gap, mode, isMobile, startIndex]);
+
 
   return (
     <div ref={ref} className="w-full">
