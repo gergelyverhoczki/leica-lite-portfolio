@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { Send } from "lucide-react";
 
 import { listPhotos } from "@/lib/photos.functions";
-import { chunk, GalleryTile } from "@/components/gallery-tile";
+import { JustifiedGallery } from "@/components/justified-gallery";
 
 
 const photosQueryOptions = queryOptions({
@@ -265,36 +265,11 @@ function Index() {
             <span className="text-sm text-muted-foreground">{photos.length} photographs</span>
           </div>
 
-          <div className="space-y-2 md:space-y-3">
-            {chunk(photos.slice(1, visibleCount), 7).map((group, gi) => {
-              const [hero, ...rest] = group;
-              const baseIndex = gi * 7 + 1;
-              return (
-                <div key={gi} className="space-y-2 md:space-y-3">
-                  {hero && (
-                    <GalleryTile
-                      photo={hero}
-                      index={baseIndex}
-                      onOpen={openLightbox}
-                      priority={gi === 0}
-                    />
-                  )}
-                  {rest.length > 0 && (
-                    <div className="columns-1 gap-2 sm:columns-2 lg:columns-3 md:gap-3 [&>*]:mb-2 md:[&>*]:mb-3">
-                      {rest.map((photo, i) => (
-                        <GalleryTile
-                          key={photo.id}
-                          photo={photo}
-                          index={baseIndex + i + 1}
-                          onOpen={openLightbox}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+          <JustifiedGallery
+            photos={photos.slice(1, visibleCount)}
+            startIndex={1}
+            onOpen={openLightbox}
+          />
 
           {visibleCount < photos.length && (
             <div ref={sentinelRef} className="h-24 w-full" aria-hidden="true" />
