@@ -79,7 +79,6 @@ export const Route = createFileRoute("/")({
 
 const NAV_LINKS = [
   { href: "#work", label: "Work" },
-  { href: "#about", label: "About" },
   { href: "#contact", label: "Contact" },
 ];
 
@@ -165,7 +164,7 @@ function Index() {
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5 md:px-10">
           <Link to="/" className="group flex items-center gap-3">
             <span className="h-3 w-3 rounded-full bg-leica-red transition-transform duration-300 group-hover:scale-125" aria-hidden="true" />
-            <span className="font-heading text-lg font-medium tracking-tight">Gergely Verhoczki</span>
+            <span className="font-heading text-xl font-medium tracking-tight">Gergely Verhoczki</span>
           </Link>
           <nav className="hidden items-center gap-8 text-sm font-medium md:flex">
             {NAV_LINKS.map((link) => (
@@ -219,25 +218,15 @@ function Index() {
         )}
       </header>
 
+      <h1 className="sr-only">Gergely Verhoczki — Photography</h1>
+
       {/* Hero */}
       <section className="px-6 pt-40 pb-20 md:px-10 md:pt-52 md:pb-32">
         <div className="mx-auto max-w-7xl">
-          <div className="max-w-3xl fade-in-up">
-            <p className="mb-4 text-sm font-medium uppercase tracking-widest text-muted-foreground">
-              Documentary Photography
-            </p>
-            <h1 className="font-heading text-4xl font-medium leading-[1.1] tracking-tight md:text-6xl lg:text-7xl">
-              Seeing the quiet details others pass by.
-            </h1>
-            <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground md:text-lg">
-              A portfolio of street, portrait, and architectural work made with available light and patience.
-            </p>
-          </div>
-
           {photos[0] && (
             <button
               onClick={() => openLightbox(0)}
-              className="group relative mt-16 block w-full cursor-zoom-in overflow-hidden rounded-sm"
+              className="group relative block w-full cursor-zoom-in overflow-hidden rounded-sm"
               aria-label="Open featured photograph"
             >
               <img
@@ -260,12 +249,6 @@ function Index() {
       {/* Gallery */}
       <section id="work" className="px-5 py-20 md:px-6 md:py-28">
         <div className="mx-auto w-full max-w-[1800px]">
-          <div className="mb-10 flex items-end justify-between md:mb-14 md:px-4">
-
-            <h2 className="font-heading text-2xl font-medium tracking-tight md:text-3xl">Selected Work</h2>
-            <span className="text-sm text-muted-foreground">{photos.length} photographs</span>
-          </div>
-
           <EditorialMosaic
             photos={photos.slice(1, visibleCount)}
             startIndex={1}
@@ -279,44 +262,12 @@ function Index() {
       </section>
 
 
-      {/* About */}
-      <section id="about" className="border-t border-border px-6 py-20 md:px-10 md:py-32">
-        <div className="mx-auto grid max-w-7xl gap-12 md:grid-cols-2 md:gap-20">
-          <div>
-            <h2 className="font-heading text-2xl font-medium tracking-tight md:text-3xl">About</h2>
-          </div>
-          <div className="space-y-6">
-            <p className="text-lg leading-relaxed text-foreground md:text-xl">
-              I photograph the space between moments — the hesitation before a stranger enters the frame, the last light
-              on a building facade, the stillness of an ordinary object made extraordinary by attention.
-            </p>
-            <p className="leading-relaxed text-muted-foreground">
-              My practice is rooted in available light and slow observation. I work primarily with rangefinder cameras
-              and prime lenses, preferring restraint over spectacle and quiet precision over noise.
-            </p>
-            <div className="grid grid-cols-2 gap-8 pt-6">
-              <div>
-                <p className="font-heading text-3xl font-medium">12</p>
-                <p className="mt-1 text-sm text-muted-foreground">Years photographing</p>
-              </div>
-              <div>
-                <p className="font-heading text-3xl font-medium">24</p>
-                <p className="mt-1 text-sm text-muted-foreground">Countries documented</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Contact */}
       <section id="contact" className="border-t border-border px-6 py-20 md:px-10 md:py-32">
         <div className="mx-auto max-w-7xl">
           <div className="grid gap-12 md:grid-cols-2 md:gap-20">
             <div>
-              <h2 className="font-heading text-2xl font-medium tracking-tight md:text-3xl">Get in touch</h2>
-              <p className="mt-4 max-w-md text-muted-foreground">
-                Open for commissions, editorial work, and print inquiries.
-              </p>
+              <h2 className="font-heading text-2xl font-medium tracking-tight md:text-3xl">Contact</h2>
             </div>
             <div className="space-y-6">
               <a
@@ -328,7 +279,7 @@ function Index() {
               <div className="flex flex-wrap gap-6 text-sm font-medium text-muted-foreground">
                 <a href="#" className="story-link transition-colors hover:text-foreground">Instagram</a>
                 <a href="#" className="story-link transition-colors hover:text-foreground">Prints</a>
-                <a href="#" className="story-link transition-colors hover:text-foreground">Newsletter</a>
+                
                 <a
                   href="https://t.me/gergover"
                   target="_blank"
@@ -348,7 +299,7 @@ function Index() {
       <footer className="border-t border-border px-6 py-8 md:px-10">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 text-sm text-muted-foreground md:flex-row">
           <p>© {new Date().getFullYear()} Gergely Verhoczki. All rights reserved.</p>
-          <p>Made with patience and available light.</p>
+          
         </div>
       </footer>
 
