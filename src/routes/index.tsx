@@ -218,6 +218,8 @@ function Index() {
         )}
       </header>
 
+      <h1 className="sr-only">Gergely Verhoczki — Photography</h1>
+
       {/* Hero */}
       <section className="px-6 pt-40 pb-20 md:px-10 md:pt-52 md:pb-32">
         <div className="mx-auto max-w-7xl">
