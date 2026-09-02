@@ -419,6 +419,7 @@ export function EditorialMosaic({
               height={row.height}
               onOpen={onOpen}
               eager={ri < 1}
+              mobile={isMobile}
             />
           ))}
         </div>
