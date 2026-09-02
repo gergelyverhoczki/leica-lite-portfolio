@@ -11,7 +11,7 @@ const projectsQueryOptions = queryOptions({
 const DESCRIPTION = "Selected photographic projects by Gergely Verhoczki.";
 const SITE_URL = "https://gergelyverhoczki.com";
 
-export const Route = createFileRoute("/work")({
+export const Route = createFileRoute("/work/")({
   loader: ({ context }) => context.queryClient.ensureQueryData(projectsQueryOptions),
   head: () => ({
     meta: [
