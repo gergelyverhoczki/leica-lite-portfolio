@@ -308,11 +308,13 @@ function MosaicImage({
   height,
   onOpen,
   eager,
+  mobile,
 }: {
   entry: Entry;
   height: number;
   onOpen: (index: number) => void;
   eager: boolean;
+  mobile: boolean;
 }) {
   const ref = useRef<HTMLButtonElement | null>(null);
   const [visible, setVisible] = useState(eager);
@@ -340,7 +342,11 @@ function MosaicImage({
       onClick={() => onOpen(entry.index)}
       aria-label={`Open photograph ${entry.index + 1}`}
       className="group block cursor-zoom-in"
-      style={{ width: entry.ratio * height, height, flexGrow: entry.ratio, flexBasis: 0 }}
+      style={
+        mobile
+          ? { width: entry.ratio * height, height, flex: "0 0 auto" }
+          : { width: entry.ratio * height, height, flexGrow: entry.ratio, flexBasis: 0 }
+      }
     >
       <img
         src={entry.photo.src}
@@ -355,6 +361,7 @@ function MosaicImage({
     </button>
   );
 }
+
 
 export function EditorialMosaic({
   photos,
