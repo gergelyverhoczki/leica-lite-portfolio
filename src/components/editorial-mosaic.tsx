@@ -21,18 +21,6 @@ function useContainerWidth() {
   return { ref, width };
 }
 
-function useViewportWidth() {
-  const [width, setWidth] = useState(0);
-
-  useLayoutEffect(() => {
-    const update = () => setWidth(window.innerWidth);
-    update();
-    window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
-  }, []);
-
-  return width;
-}
 
 
 function useAspectRatios(photos: MosaicPhotoItem[]) {
