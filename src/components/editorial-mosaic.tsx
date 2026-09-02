@@ -106,20 +106,20 @@ type MobileConfig = {
 
 const MOBILE: Record<"phone" | "compact", MobileConfig> = {
   phone: {
-    maxHeight: 560,
-    portraitMaxWidth: 0.9,
-    supportWidth: 0.62,
-    supportEvery: 7,
-    pairEvery: 5,
-    minPairHeight: 130,
+    maxHeight: 520,
+    portraitMaxWidth: 0.94,
+    supportWidth: 0.68,
+    supportEvery: 6,
+    pairEvery: 3,
+    minPairHeight: 150,
   },
   compact: {
-    maxHeight: 660,
-    portraitMaxWidth: 0.86,
-    supportWidth: 0.58,
-    supportEvery: 6,
-    pairEvery: 4,
-    minPairHeight: 170,
+    maxHeight: 600,
+    portraitMaxWidth: 0.9,
+    supportWidth: 0.64,
+    supportEvery: 5,
+    pairEvery: 3,
+    minPairHeight: 190,
   },
 };
 
@@ -138,18 +138,21 @@ function buildMobileRows(
     const first = entries[i]!;
     const next = entries[i + 1];
 
-    // A pair only earns its place when both frames stay large enough to read.
-    if (next && cfg.pairEvery > 0 && slot % cfg.pairEvery === cfg.pairEvery - 1) {
+    // Pair whenever two neighbours actually sit well together and both frames
+    // stay large enough to read — no forced cadence, no reserved empty cells.
+    if (next && cfg.pairEvery > 0 && slot % cfg.pairEvery !== 0) {
       const sum = first.ratio + next.ratio;
       const height = (containerWidth - gap) / sum;
-      const similar = Math.abs(first.ratio - next.ratio) < 0.65;
-      if (height >= cfg.minPairHeight && similar) {
+      const compatible =
+        Math.abs(first.ratio - next.ratio) < 0.5 ||
+        (first.ratio < 1 && next.ratio < 1); // two portraits always read well
+      if (height >= cfg.minPairHeight && compatible) {
         rows.push({
           entries: [first, next],
           height,
           width: containerWidth,
           align: "start",
-          spaceAfter: 1.2,
+          spaceAfter: 1,
         });
         i += 2;
         slot += 1;
@@ -164,7 +167,7 @@ function buildMobileRows(
     let width: number;
     if (isSupport) {
       width = containerWidth * cfg.supportWidth;
-    } else if (first.ratio < 0.95) {
+    } else if (first.ratio < 0.9) {
       width = containerWidth * cfg.portraitMaxWidth;
     } else {
       width = containerWidth;
@@ -179,7 +182,9 @@ function buildMobileRows(
       height: width / first.ratio,
       width,
       align: isSupport ? (slot % 2 === 0 ? "start" : "end") : "center",
-      spaceAfter: isSupport ? 1.6 : first.ratio < 0.95 ? 1.35 : 1,
+      // Only a deliberate supporting frame earns extra air; everything else
+      // keeps the same small, consistent rhythm.
+      spaceAfter: isSupport ? 1.35 : 1,
     });
     i += 1;
     slot += 1;
@@ -187,6 +192,7 @@ function buildMobileRows(
 
   return rows;
 }
+
 
 
 /**
