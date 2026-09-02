@@ -86,7 +86,7 @@ function AdminPage() {
 
     try {
       for (const original of list) {
-        const file = await compressImage(original);
+        const { file, width, height } = await compressImage(original);
         const extension = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
         const path = `${crypto.randomUUID()}.${extension}`;
         const { error: uploadError } = await supabase.storage
@@ -95,7 +95,12 @@ function AdminPage() {
         if (uploadError) throw new Error(uploadError.message);
 
         await runAddPhoto({
-          data: { storagePath: path, alt: "", sortOrder: nextOrder },
+          data: {
+            storagePath: path,
+            alt: "",
+            sortOrder: nextOrder,
+            ...(width > 0 && height > 0 ? { width, height } : {}),
+          },
         });
         nextOrder += 1;
       }
@@ -208,6 +213,7 @@ function AdminPage() {
                   <input
                     value={draft.alt}
                     placeholder="Alt text"
+                    aria-label="Alt text"
                     onChange={(e) =>
                       setDrafts((prev) => ({
                         ...prev,

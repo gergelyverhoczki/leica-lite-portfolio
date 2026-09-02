@@ -11,6 +11,8 @@ export type GalleryPhoto = {
   alt: string;
   sortOrder: number;
   storagePath: string | null;
+  width: number | null;
+  height: number | null;
 };
 
 function createPublicClient() {
@@ -37,6 +39,8 @@ type PhotoRow = {
   storage_path: string | null;
   alt: string;
   sort_order: number;
+  width: number | null;
+  height: number | null;
 };
 
 function publicUrl(client: ReturnType<typeof createPublicClient>, path: string): string {
@@ -53,6 +57,8 @@ function toGalleryPhotos(
     alt: row.alt,
     sortOrder: row.sort_order,
     storagePath: row.storage_path,
+    width: row.width,
+    height: row.height,
   }));
 }
 
@@ -60,7 +66,7 @@ export const listPhotos = createServerFn({ method: "GET" }).handler(async () => 
   const client = createPublicClient();
   const { data, error } = await client
     .from("photos")
-    .select("id, url, storage_path, alt, sort_order")
+    .select("id, url, storage_path, alt, sort_order, width, height")
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: true });
 
@@ -86,6 +92,8 @@ export const addPhoto = createServerFn({ method: "POST" })
         storagePath: z.string().min(1).max(300),
         alt: z.string().max(300).default(""),
         sortOrder: z.number().int().min(0).max(100000),
+        width: z.number().int().positive().optional(),
+        height: z.number().int().positive().optional(),
       })
       .parse(input),
   )
@@ -97,6 +105,7 @@ export const addPhoto = createServerFn({ method: "POST" })
         storage_path: data.storagePath,
         alt: data.alt,
         sort_order: data.sortOrder,
+        ...(data.width && data.height ? { width: data.width, height: data.height } : {}),
       })
       .select("id")
       .single();
@@ -148,7 +157,7 @@ export const listPhotosForAdmin = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("photos")
-      .select("id, url, storage_path, alt, sort_order")
+      .select("id, url, storage_path, alt, sort_order, width, height")
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: true });
     if (error) throw new Error(error.message);
@@ -162,5 +171,7 @@ export const listPhotosForAdmin = createServerFn({ method: "GET" })
       alt: row.alt,
       sortOrder: row.sort_order,
       storagePath: row.storage_path,
+      width: row.width,
+      height: row.height,
     })) satisfies GalleryPhoto[];
   });
