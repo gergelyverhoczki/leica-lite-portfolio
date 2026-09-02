@@ -21,6 +21,8 @@ function useContainerWidth() {
   return { ref, width };
 }
 
+
+
 function useAspectRatios(photos: MosaicPhotoItem[]) {
   const [ratios, setRatios] = useState<Record<string, number>>({});
 
@@ -106,20 +108,20 @@ type MobileConfig = {
 
 const MOBILE: Record<"phone" | "compact", MobileConfig> = {
   phone: {
-    maxHeight: 560,
-    portraitMaxWidth: 0.9,
-    supportWidth: 0.62,
-    supportEvery: 7,
-    pairEvery: 5,
-    minPairHeight: 130,
+    maxHeight: 520,
+    portraitMaxWidth: 0.94,
+    supportWidth: 0.68,
+    supportEvery: 6,
+    pairEvery: 3,
+    minPairHeight: 150,
   },
   compact: {
-    maxHeight: 660,
-    portraitMaxWidth: 0.86,
-    supportWidth: 0.58,
-    supportEvery: 6,
-    pairEvery: 4,
-    minPairHeight: 170,
+    maxHeight: 600,
+    portraitMaxWidth: 0.9,
+    supportWidth: 0.64,
+    supportEvery: 5,
+    pairEvery: 3,
+    minPairHeight: 190,
   },
 };
 
@@ -138,18 +140,20 @@ function buildMobileRows(
     const first = entries[i]!;
     const next = entries[i + 1];
 
-    // A pair only earns its place when both frames stay large enough to read.
-    if (next && cfg.pairEvery > 0 && slot % cfg.pairEvery === cfg.pairEvery - 1) {
-      const sum = first.ratio + next.ratio;
-      const height = (containerWidth - gap) / sum;
-      const similar = Math.abs(first.ratio - next.ratio) < 0.65;
-      if (height >= cfg.minPairHeight && similar) {
+    // Use a pair only when it makes a genuinely readable, balanced row. The
+    // shared height is exact: both natural widths plus the gap fill the measure.
+    if (next) {
+      const pairHeight = (containerWidth - gap) / (first.ratio + next.ratio);
+      const balanced = Math.abs(first.ratio - next.ratio) < 0.65;
+      const readable = pairHeight >= cfg.minPairHeight;
+      const editorialMoment = slot > 0 && slot % cfg.pairEvery === 0;
+      if (balanced && readable && editorialMoment) {
         rows.push({
           entries: [first, next],
-          height,
+          height: pairHeight,
           width: containerWidth,
           align: "start",
-          spaceAfter: 1.2,
+          spaceAfter: 1,
         });
         i += 2;
         slot += 1;
@@ -157,29 +161,23 @@ function buildMobileRows(
       }
     }
 
-    // Occasional smaller supporting frame, alternately nudged left / right.
+    // Singles use nearly all of the measure. Only the occasional supporting
+    // frame is intentionally narrower, and its height still comes from ratio.
     const isSupport =
       cfg.supportEvery > 0 && slot > 0 && slot % cfg.supportEvery === cfg.supportEvery - 1;
-
-    let width: number;
-    if (isSupport) {
-      width = containerWidth * cfg.supportWidth;
-    } else if (first.ratio < 0.95) {
-      width = containerWidth * cfg.portraitMaxWidth;
-    } else {
-      width = containerWidth;
-    }
-
-    // Never let a tall frame run past the comfortable viewing height.
-    const byHeight = cfg.maxHeight * first.ratio;
-    width = Math.min(width, byHeight, containerWidth);
+    const requestedWidth = isSupport
+      ? containerWidth * cfg.supportWidth
+      : first.ratio < 0.9
+        ? containerWidth * cfg.portraitMaxWidth
+        : containerWidth;
+    const width = Math.min(requestedWidth, cfg.maxHeight * first.ratio, containerWidth);
 
     rows.push({
       entries: [first],
       height: width / first.ratio,
       width,
       align: isSupport ? (slot % 2 === 0 ? "start" : "end") : "center",
-      spaceAfter: isSupport ? 1.6 : first.ratio < 0.95 ? 1.35 : 1,
+      spaceAfter: 1,
     });
     i += 1;
     slot += 1;
@@ -187,6 +185,8 @@ function buildMobileRows(
 
   return rows;
 }
+
+
 
 
 /**
@@ -308,11 +308,13 @@ function MosaicImage({
   height,
   onOpen,
   eager,
+  mobile,
 }: {
   entry: Entry;
   height: number;
   onOpen: (index: number) => void;
   eager: boolean;
+  mobile: boolean;
 }) {
   const ref = useRef<HTMLButtonElement | null>(null);
   const [visible, setVisible] = useState(eager);
@@ -340,7 +342,11 @@ function MosaicImage({
       onClick={() => onOpen(entry.index)}
       aria-label={`Open photograph ${entry.index + 1}`}
       className="group block cursor-zoom-in"
-      style={{ width: entry.ratio * height, height, flexGrow: entry.ratio, flexBasis: 0 }}
+      style={
+        mobile
+          ? { width: entry.ratio * height, height, flex: "0 0 auto" }
+          : { width: entry.ratio * height, height, flexGrow: entry.ratio, flexBasis: 0 }
+      }
     >
       <img
         src={entry.photo.src}
@@ -355,6 +361,7 @@ function MosaicImage({
     </button>
   );
 }
+
 
 export function EditorialMosaic({
   photos,
@@ -375,7 +382,7 @@ export function EditorialMosaic({
     width < 440 ? "phone" : width < 700 ? "compact" : width < 1100 ? "tablet" : "desktop";
   const isMobile = mode === "phone" || mode === "compact";
   const gap = mode === "phone" ? 10 : mode === "compact" ? 14 : mode === "tablet" ? 18 : 24;
-  const baseSpace = mode === "phone" ? 22 : mode === "compact" ? 30 : mode === "tablet" ? 40 : 56;
+  const baseSpace = mode === "phone" ? 26 : mode === "compact" ? 30 : mode === "tablet" ? 40 : 56;
 
   const rows = useMemo(() => {
     if (width <= 0) return [] as Row[];
@@ -412,6 +419,7 @@ export function EditorialMosaic({
               height={row.height}
               onOpen={onOpen}
               eager={ri < 1}
+              mobile={isMobile}
             />
           ))}
         </div>
