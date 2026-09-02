@@ -30,16 +30,19 @@ function toBlob(canvas: HTMLCanvasElement, quality: number): Promise<Blob | null
   return new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", quality));
 }
 
+export type CompressedImage = { file: File; width: number; height: number };
+
 /**
  * Resize an image to at most 1600px wide and compress it towards ~200KB.
- * Returns a JPEG File. Falls back to the original file if anything fails.
+ * Returns a JPEG File plus the final pixel dimensions (0/0 when unknown).
+ * Falls back to the original file if anything fails.
  */
-export async function compressImage(file: File): Promise<File> {
+export async function compressImage(file: File): Promise<CompressedImage> {
   try {
     const bitmap = await loadBitmap(file);
     const sourceWidth = "width" in bitmap ? bitmap.width : 0;
     const sourceHeight = "height" in bitmap ? bitmap.height : 0;
-    if (!sourceWidth || !sourceHeight) return file;
+    if (!sourceWidth || !sourceHeight) return { file, width: 0, height: 0 };
 
     const scale = Math.min(1, MAX_WIDTH / sourceWidth);
     const width = Math.round(sourceWidth * scale);
@@ -49,7 +52,7 @@ export async function compressImage(file: File): Promise<File> {
     canvas.width = width;
     canvas.height = height;
     const ctx = canvas.getContext("2d");
-    if (!ctx) return file;
+    if (!ctx) return { file, width: sourceWidth, height: sourceHeight };
     ctx.imageSmoothingQuality = "high";
     ctx.drawImage(bitmap as CanvasImageSource, 0, 0, width, height);
     if ("close" in bitmap) bitmap.close();
@@ -60,12 +63,12 @@ export async function compressImage(file: File): Promise<File> {
       quality = Math.max(MIN_QUALITY, quality - 0.1);
       blob = await toBlob(canvas, quality);
     }
-    if (!blob) return file;
-    if (blob.size >= file.size && scale === 1) return file;
+    if (!blob) return { file, width, height };
+    if (blob.size >= file.size && scale === 1) return { file, width, height };
 
     const name = file.name.replace(/\.[^.]+$/, "") + ".jpg";
-    return new File([blob], name, { type: "image/jpeg" });
+    return { file: new File([blob], name, { type: "image/jpeg" }), width, height };
   } catch {
-    return file;
+    return { file, width: 0, height: 0 };
   }
 }
