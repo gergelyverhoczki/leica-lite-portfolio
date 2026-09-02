@@ -1,6 +1,12 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
-export type MosaicPhotoItem = { id: string; src: string; alt: string };
+export type MosaicPhotoItem = {
+  id: string;
+  src: string;
+  alt: string;
+  width?: number | null;
+  height?: number | null;
+};
 
 const DEFAULT_RATIO = 3 / 2;
 
@@ -29,6 +35,12 @@ function useAspectRatios(photos: MosaicPhotoItem[]) {
   useEffect(() => {
     let cancelled = false;
     photos.forEach((photo) => {
+      // Dimensions stored at upload time make the ratio exact — no download.
+      if (photo.width && photo.height && photo.width > 0 && photo.height > 0) {
+        const ratio = photo.width / photo.height;
+        setRatios((prev) => (prev[photo.id] === ratio ? prev : { ...prev, [photo.id]: ratio }));
+        return;
+      }
       const img = new Image();
       img.decoding = "async";
       img.src = photo.src;
