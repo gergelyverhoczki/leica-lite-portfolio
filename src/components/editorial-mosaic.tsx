@@ -138,18 +138,17 @@ function buildMobileRows(
     const first = entries[i]!;
     const next = entries[i + 1];
 
-    // Pair whenever two neighbours actually sit well together and both frames
-    // stay large enough to read — no forced cadence, no reserved empty cells.
-    if (next && cfg.pairEvery > 0 && slot % cfg.pairEvery !== 0) {
-      const sum = first.ratio + next.ratio;
-      const height = (containerWidth - gap) / sum;
-      const compatible =
-        Math.abs(first.ratio - next.ratio) < 0.5 ||
-        (first.ratio < 1 && next.ratio < 1); // two portraits always read well
-      if (height >= cfg.minPairHeight && compatible) {
+    // Use a pair only when it makes a genuinely readable, balanced row. The
+    // shared height is exact: both natural widths plus the gap fill the measure.
+    if (next) {
+      const pairHeight = (containerWidth - gap) / (first.ratio + next.ratio);
+      const balanced = Math.abs(first.ratio - next.ratio) < 0.65;
+      const readable = pairHeight >= cfg.minPairHeight;
+      const editorialMoment = slot > 0 && slot % cfg.pairEvery === 0;
+      if (balanced && readable && editorialMoment) {
         rows.push({
           entries: [first, next],
-          height,
+          height: pairHeight,
           width: containerWidth,
           align: "start",
           spaceAfter: 1,
@@ -160,31 +159,23 @@ function buildMobileRows(
       }
     }
 
-    // Occasional smaller supporting frame, alternately nudged left / right.
+    // Singles use nearly all of the measure. Only the occasional supporting
+    // frame is intentionally narrower, and its height still comes from ratio.
     const isSupport =
       cfg.supportEvery > 0 && slot > 0 && slot % cfg.supportEvery === cfg.supportEvery - 1;
-
-    let width: number;
-    if (isSupport) {
-      width = containerWidth * cfg.supportWidth;
-    } else if (first.ratio < 0.9) {
-      width = containerWidth * cfg.portraitMaxWidth;
-    } else {
-      width = containerWidth;
-    }
-
-    // Never let a tall frame run past the comfortable viewing height.
-    const byHeight = cfg.maxHeight * first.ratio;
-    width = Math.min(width, byHeight, containerWidth);
+    const requestedWidth = isSupport
+      ? containerWidth * cfg.supportWidth
+      : first.ratio < 0.9
+        ? containerWidth * cfg.portraitMaxWidth
+        : containerWidth;
+    const width = Math.min(requestedWidth, cfg.maxHeight * first.ratio, containerWidth);
 
     rows.push({
       entries: [first],
       height: width / first.ratio,
       width,
       align: isSupport ? (slot % 2 === 0 ? "start" : "end") : "center",
-      // Only a deliberate supporting frame earns extra air; everything else
-      // keeps the same small, consistent rhythm.
-      spaceAfter: isSupport ? 1.35 : 1,
+      spaceAfter: 1,
     });
     i += 1;
     slot += 1;
@@ -192,6 +183,7 @@ function buildMobileRows(
 
   return rows;
 }
+
 
 
 
