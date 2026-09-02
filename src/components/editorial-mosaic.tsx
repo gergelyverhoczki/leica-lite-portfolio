@@ -381,7 +381,7 @@ export function EditorialMosaic({
     width < 440 ? "phone" : width < 700 ? "compact" : width < 1100 ? "tablet" : "desktop";
   const isMobile = mode === "phone" || mode === "compact";
   const gap = mode === "phone" ? 10 : mode === "compact" ? 14 : mode === "tablet" ? 18 : 24;
-  const baseSpace = mode === "phone" ? 22 : mode === "compact" ? 30 : mode === "tablet" ? 40 : 56;
+  const baseSpace = mode === "phone" ? 26 : mode === "compact" ? 30 : mode === "tablet" ? 40 : 56;
 
   const rows = useMemo(() => {
     if (width <= 0) return [] as Row[];
