@@ -13,6 +13,7 @@ export type GalleryPhoto = {
   storagePath: string | null;
   width: number | null;
   height: number | null;
+  inPortfolio?: boolean;
 };
 
 function createPublicClient() {
@@ -41,17 +42,18 @@ type PhotoRow = {
   sort_order: number;
   width: number | null;
   height: number | null;
+  in_portfolio?: boolean;
 };
 
 function publicUrl(client: ReturnType<typeof createPublicClient>, path: string): string {
   return client.storage.from("photos").getPublicUrl(path).data.publicUrl;
 }
 
-function toGalleryPhotos(
+export function toGalleryPhoto(
   client: ReturnType<typeof createPublicClient>,
-  rows: PhotoRow[],
-): GalleryPhoto[] {
-  return rows.map((row) => ({
+  row: PhotoRow,
+): GalleryPhoto {
+  return {
     id: row.id,
     src: row.storage_path ? publicUrl(client, row.storage_path) : row.url,
     alt: row.alt,
@@ -59,19 +61,21 @@ function toGalleryPhotos(
     storagePath: row.storage_path,
     width: row.width,
     height: row.height,
-  }));
+    inPortfolio: row.in_portfolio ?? true,
+  };
 }
 
 export const listPhotos = createServerFn({ method: "GET" }).handler(async () => {
   const client = createPublicClient();
   const { data, error } = await client
     .from("photos")
-    .select("id, url, storage_path, alt, sort_order, width, height")
+    .select("id, url, storage_path, alt, sort_order, width, height, in_portfolio")
+    .eq("in_portfolio", true)
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: true });
 
   if (error) throw new Error(error.message);
-  return toGalleryPhotos(client, (data ?? []) as PhotoRow[]);
+  return (data ?? []).map((row) => toGalleryPhoto(client, row as PhotoRow));
 });
 
 export const getIsAdmin = createServerFn({ method: "GET" })
@@ -94,6 +98,7 @@ export const addPhoto = createServerFn({ method: "POST" })
         sortOrder: z.number().int().min(0).max(100000),
         width: z.number().int().positive().optional(),
         height: z.number().int().positive().optional(),
+        inPortfolio: z.boolean().default(true),
       })
       .parse(input),
   )
@@ -105,6 +110,7 @@ export const addPhoto = createServerFn({ method: "POST" })
         storage_path: data.storagePath,
         alt: data.alt,
         sort_order: data.sortOrder,
+        in_portfolio: data.inPortfolio,
         ...(data.width && data.height ? { width: data.width, height: data.height } : {}),
       })
       .select("id")
@@ -121,13 +127,18 @@ export const updatePhoto = createServerFn({ method: "POST" })
         id: z.string().uuid(),
         alt: z.string().max(300),
         sortOrder: z.number().int().min(0).max(100000),
+        inPortfolio: z.boolean().optional(),
       })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase
       .from("photos")
-      .update({ alt: data.alt, sort_order: data.sortOrder })
+      .update({
+        alt: data.alt,
+        sort_order: data.sortOrder,
+        ...(data.inPortfolio === undefined ? {} : { in_portfolio: data.inPortfolio }),
+      })
       .eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -157,21 +168,12 @@ export const listPhotosForAdmin = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("photos")
-      .select("id, url, storage_path, alt, sort_order, width, height")
+      .select("id, url, storage_path, alt, sort_order, width, height, in_portfolio")
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: true });
     if (error) throw new Error(error.message);
 
     const rows = (data ?? []) as PhotoRow[];
     const publicClient = createPublicClient();
-
-    return rows.map((row) => ({
-      id: row.id,
-      src: row.storage_path ? publicUrl(publicClient, row.storage_path) : row.url,
-      alt: row.alt,
-      sortOrder: row.sort_order,
-      storagePath: row.storage_path,
-      width: row.width,
-      height: row.height,
-    })) satisfies GalleryPhoto[];
+    return rows.map((row) => toGalleryPhoto(publicClient, row));
   });
