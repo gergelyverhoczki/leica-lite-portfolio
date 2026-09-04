@@ -78,9 +78,11 @@ export const Route = createFileRoute("/")({
 
 
 const NAV_LINKS = [
-  { href: "/work", label: "Work" },
+  { href: "#work", label: "Work" },
+  { href: "/projects", label: "Projects" },
   { href: "#contact", label: "Contact" },
 ];
+
 
 const PAGE_SIZE = 14;
 
@@ -167,16 +169,27 @@ function Index() {
             <span className="font-heading text-xl font-medium tracking-tight">Gergely Verhoczki</span>
           </Link>
           <nav className="hidden items-center gap-8 text-sm font-medium md:flex">
-            {NAV_LINKS.map((link) => (
-              <a
-                key={link.href}
-                href={link.href}
-                className="story-link text-muted-foreground transition-colors hover:text-foreground"
-              >
-                {link.label}
-              </a>
-            ))}
+            {NAV_LINKS.map((link) =>
+              link.href === "/projects" ? (
+                <Link
+                  key={link.href}
+                  to="/projects"
+                  className="story-link text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  {link.label}
+                </Link>
+              ) : (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  className="story-link text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  {link.label}
+                </a>
+              ),
+            )}
           </nav>
+
 
           <button
             onClick={() => setMenuOpen((open) => !open)}
@@ -203,16 +216,28 @@ function Index() {
         {menuOpen && (
           <nav className="border-t border-border bg-background md:hidden">
             <div className="mx-auto flex max-w-7xl flex-col px-6 py-2">
-              {NAV_LINKS.map((link) => (
-                <a
-                  key={link.href}
-                  href={link.href}
-                  onClick={() => setMenuOpen(false)}
-                  className="border-b border-border/60 py-4 font-heading text-lg font-medium tracking-tight last:border-b-0"
-                >
-                  {link.label}
-                </a>
-              ))}
+              {NAV_LINKS.map((link) =>
+                link.href === "/projects" ? (
+                  <Link
+                    key={link.href}
+                    to="/projects"
+                    onClick={() => setMenuOpen(false)}
+                    className="border-b border-border/60 py-4 font-heading text-lg font-medium tracking-tight last:border-b-0"
+                  >
+                    {link.label}
+                  </Link>
+                ) : (
+                  <a
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setMenuOpen(false)}
+                    className="border-b border-border/60 py-4 font-heading text-lg font-medium tracking-tight last:border-b-0"
+                  >
+                    {link.label}
+                  </a>
+                ),
+              )}
+
             </div>
           </nav>
         )}
@@ -242,6 +267,17 @@ function Index() {
               </div>
             </button>
           )}
+
+          {photos[0]?.projectSlug && photos[0]?.projectTitle && (
+            <Link
+              to="/projects/$slug"
+              params={{ slug: photos[0].projectSlug }}
+              className="mt-3 inline-block text-[10px] uppercase tracking-[0.18em] text-muted-foreground transition-colors hover:text-foreground"
+            >
+              From the {photos[0].projectTitle} series →
+            </Link>
+          )}
+
 
         </div>
       </section>

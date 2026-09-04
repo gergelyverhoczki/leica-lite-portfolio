@@ -56,6 +56,7 @@ export type Database = {
           id: string
           photo_id: string
           project_id: string
+          show_on_homepage: boolean
           sort_order: number
         }
         Insert: {
@@ -63,6 +64,7 @@ export type Database = {
           id?: string
           photo_id: string
           project_id: string
+          show_on_homepage?: boolean
           sort_order?: number
         }
         Update: {
@@ -70,6 +72,7 @@ export type Database = {
           id?: string
           photo_id?: string
           project_id?: string
+          show_on_homepage?: boolean
           sort_order?: number
         }
         Relationships: [

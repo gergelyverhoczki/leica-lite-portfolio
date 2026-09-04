@@ -14,7 +14,10 @@ export type GalleryPhoto = {
   width: number | null;
   height: number | null;
   inPortfolio?: boolean;
+  projectTitle?: string | null;
+  projectSlug?: string | null;
 };
+
 
 function createPublicClient() {
   const key = process.env["SUPABASE_PUBLISHABLE_KEY"]!;
@@ -69,24 +72,47 @@ export const listPhotos = createServerFn({ method: "GET" }).handler(async () => 
   const client = createPublicClient();
   const columns = "id, url, storage_path, alt, sort_order, width, height, in_portfolio, created_at";
 
-  // The homepage gallery is the union of the curated library photographs and
-  // every photograph belonging to a published project (RLS filters drafts out).
-  const [portfolio, links] = await Promise.all([
+  // The homepage gallery is: standalone library photographs (not part of any
+  // project) plus the photographs explicitly selected as "show on homepage"
+  // inside a published project (RLS hides links of unpublished projects).
+  const [portfolio, links, projects] = await Promise.all([
     client.from("photos").select(columns).eq("in_portfolio", true),
-    client.from("project_photos").select("photo_id"),
+    client.from("project_photos").select("photo_id, project_id, show_on_homepage, sort_order"),
+    client.from("projects").select("id, title, slug").eq("status", "published"),
   ]);
   if (portfolio.error) throw new Error(portfolio.error.message);
   if (links.error) throw new Error(links.error.message);
+  if (projects.error) throw new Error(projects.error.message);
+
+  type Link = { photo_id: string; project_id: string; show_on_homepage: boolean | null };
+  const linkRows = (links.data ?? []) as Link[];
+  const projectMap = new Map(
+    ((projects.data ?? []) as Array<{ id: string; title: string; slug: string }>).map((p) => [p.id, p]),
+  );
+
+  const linkedPhotoIds = new Set(linkRows.map((link) => link.photo_id));
+  // photo id -> owning published project (first published link wins)
+  const photoProject = new Map<string, { title: string; slug: string }>();
+  const selectedIds = new Set<string>();
+  for (const link of linkRows) {
+    const project = projectMap.get(link.project_id);
+    if (!project) continue;
+    if (!photoProject.has(link.photo_id)) {
+      photoProject.set(link.photo_id, { title: project.title, slug: project.slug });
+    }
+    if (link.show_on_homepage) selectedIds.add(link.photo_id);
+  }
 
   const rows = new Map<string, PhotoRow & { created_at: string }>();
   for (const row of (portfolio.data ?? []) as Array<PhotoRow & { created_at: string }>) {
+    // Photographs belonging to a project only appear when explicitly selected.
+    if (linkedPhotoIds.has(row.id) && !selectedIds.has(row.id)) continue;
     rows.set(row.id, row);
   }
 
-  const projectPhotoIds = [...new Set(((links.data ?? []) as Array<{ photo_id: string }>).map((l) => l.photo_id))]
-    .filter((id) => !rows.has(id));
-  if (projectPhotoIds.length > 0) {
-    const { data, error } = await client.from("photos").select(columns).in("id", projectPhotoIds);
+  const missing = [...selectedIds].filter((id) => !rows.has(id));
+  if (missing.length > 0) {
+    const { data, error } = await client.from("photos").select(columns).in("id", missing);
     if (error) throw new Error(error.message);
     for (const row of (data ?? []) as Array<PhotoRow & { created_at: string }>) rows.set(row.id, row);
   }
@@ -94,8 +120,16 @@ export const listPhotos = createServerFn({ method: "GET" }).handler(async () => 
   // Keep the existing curated ordering: sort_order first, then upload time.
   return [...rows.values()]
     .sort((a, b) => a.sort_order - b.sort_order || a.created_at.localeCompare(b.created_at))
-    .map((row) => toGalleryPhoto(client, row));
+    .map((row) => {
+      const project = photoProject.get(row.id);
+      return {
+        ...toGalleryPhoto(client, row),
+        projectTitle: project?.title ?? null,
+        projectSlug: project?.slug ?? null,
+      };
+    });
 });
+
 
 
 export const getIsAdmin = createServerFn({ method: "GET" })
