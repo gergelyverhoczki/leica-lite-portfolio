@@ -14,7 +14,10 @@ export type GalleryPhoto = {
   width: number | null;
   height: number | null;
   inPortfolio?: boolean;
+  projectTitle?: string | null;
+  projectSlug?: string | null;
 };
+
 
 function createPublicClient() {
   const key = process.env["SUPABASE_PUBLISHABLE_KEY"]!;
