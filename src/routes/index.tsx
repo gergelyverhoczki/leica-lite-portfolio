@@ -268,6 +268,17 @@ function Index() {
             </button>
           )}
 
+          {photos[0]?.projectSlug && photos[0]?.projectTitle && (
+            <Link
+              to="/projects/$slug"
+              params={{ slug: photos[0].projectSlug }}
+              className="mt-3 inline-block text-[10px] uppercase tracking-[0.18em] text-muted-foreground transition-colors hover:text-foreground"
+            >
+              From the {photos[0].projectTitle} series →
+            </Link>
+          )}
+
+
         </div>
       </section>
 
