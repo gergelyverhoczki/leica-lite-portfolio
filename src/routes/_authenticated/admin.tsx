@@ -58,9 +58,12 @@ function AdminPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const fileInput = useRef<HTMLInputElement>(null);
+  const projectFileInput = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
+  const [projectDragging, setProjectDragging] = useState(false);
+
   const [drafts, setDrafts] = useState<Record<string, { alt: string; sortOrder: number }>>({});
   const [projectDraft, setProjectDraft] = useState<ProjectDraft>(blankProject);
   const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
@@ -173,31 +176,55 @@ function AdminPage() {
     navigate({ to: "/auth", replace: true });
   };
 
-  const uploadFiles = async (files: FileList | File[]) => {
+  const uploadFiles = async (files: FileList | File[], projectId?: string) => {
     const list = Array.from(files).filter((file) => file.type.startsWith("image/"));
     if (list.length === 0) return;
     setUploading(true);
     setMessage(null);
     let nextOrder = (photosQuery.data ?? []).reduce((max, photo) => Math.max(max, photo.sortOrder), 0) + 1;
+    let nextProjectOrder = (projectPhotosQuery.data ?? []).reduce((max, photo) => Math.max(max, photo.projectSortOrder), -1) + 1;
     try {
+      let done = 0;
       for (const original of list) {
+        setMessage(`Uploading ${done + 1} of ${list.length}…`);
         const { file, width, height } = await compressImage(original);
         const extension = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
         const path = `${crypto.randomUUID()}.${extension}`;
         const { error: uploadError } = await supabase.storage.from("photos").upload(path, file, { contentType: file.type, upsert: false });
         if (uploadError) throw new Error(uploadError.message);
-        await runAddPhoto({ data: { storagePath: path, alt: "", sortOrder: nextOrder, ...(width > 0 && height > 0 ? { width, height } : {}) } });
+        const created = await runAddPhoto({
+          data: {
+            storagePath: path,
+            alt: "",
+            sortOrder: nextOrder,
+            // Project uploads live in the project; the homepage picks them up
+            // automatically while the project is published.
+            inPortfolio: !projectId,
+            ...(width > 0 && height > 0 ? { width, height } : {}),
+          },
+        });
+        if (projectId) {
+          await runAddPhotoToProject({ data: { projectId, photoId: created.id, sortOrder: nextProjectOrder } });
+          nextProjectOrder += 1;
+        }
         nextOrder += 1;
+        done += 1;
       }
       setMessage(`${list.length} photo${list.length > 1 ? "s" : ""} uploaded.`);
       await queryClient.invalidateQueries({ queryKey: ["admin-photos"] });
+      if (projectId) {
+        await queryClient.invalidateQueries({ queryKey: ["admin-project-photos", projectId] });
+        await queryClient.invalidateQueries({ queryKey: ["admin-projects"] });
+      }
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Upload failed.");
     } finally {
       setUploading(false);
       if (fileInput.current) fileInput.current.value = "";
+      if (projectFileInput.current) projectFileInput.current.value = "";
     }
   };
+
 
   const startEditing = (project: NonNullable<typeof projectsQuery.data>[number]) => {
     setSelectedProjectId(project.id);
@@ -261,7 +288,7 @@ function AdminPage() {
           </div>
         </section>
 
-        {activeProjectId && <section className="mt-16"><div className="mb-6 flex items-end justify-between gap-4"><div><p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Selected project</p><h2 className="mt-2 font-heading text-2xl font-medium tracking-tight">{projects.find((project) => project.id === activeProjectId)?.title}</h2></div><select aria-label="Add photo to project" disabled={availablePhotos.length === 0 || assignmentMutation.isPending} value="" onChange={(event) => { if (event.target.value) assignmentMutation.mutate({ projectId: activeProjectId, photoId: event.target.value, sortOrder: assignedPhotos.length }); }} className="max-w-[220px] border-b border-border bg-background py-2 text-sm outline-none"><option value="">Add photograph…</option>{availablePhotos.map((photo) => <option key={photo.id} value={photo.id}>{photo.alt || photo.id.slice(0, 8)}</option>)}</select></div><ul className="divide-y divide-border border-y border-border">{assignedPhotos.map((photo, index) => <li key={photo.projectPhotoId} className="flex items-center gap-4 py-4"><img src={photo.src} alt={photo.alt || "Portfolio photograph"} className="h-16 w-24 flex-none object-cover" loading="lazy" /><span className="min-w-0 flex-1 text-sm">{photo.alt || "Untitled photograph"}</span><input type="number" min="0" value={photo.projectSortOrder} aria-label={`Project order for photograph ${index + 1}`} onChange={(event) => reorderMutation.mutate({ id: photo.projectPhotoId, sortOrder: Number(event.target.value) })} className="w-16 border-b border-border bg-transparent py-1 text-sm outline-none" /><button onClick={() => removeAssignmentMutation.mutate(photo.projectPhotoId)} className="text-sm text-muted-foreground underline underline-offset-4 hover:text-leica-red">Remove</button></li>)}</ul>{assignedPhotos.length === 0 && <p className="py-8 text-sm text-muted-foreground">Assign photographs to this project from the menu above.</p>}</section>}
+        {activeProjectId && <section className="mt-16"><div className="mb-6 flex items-end justify-between gap-4"><div><p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Selected project</p><h2 className="mt-2 font-heading text-2xl font-medium tracking-tight">{projects.find((project) => project.id === activeProjectId)?.title}</h2></div><select aria-label="Add photo to project" disabled={availablePhotos.length === 0 || assignmentMutation.isPending} value="" onChange={(event) => { if (event.target.value) assignmentMutation.mutate({ projectId: activeProjectId, photoId: event.target.value, sortOrder: assignedPhotos.length }); }} className="max-w-[220px] border-b border-border bg-background py-2 text-sm outline-none"><option value="">Add photograph…</option>{availablePhotos.map((photo) => <option key={photo.id} value={photo.id}>{photo.alt || photo.id.slice(0, 8)}</option>)}</select></div><div onDragOver={(event) => { event.preventDefault(); setProjectDragging(true); }} onDragLeave={() => setProjectDragging(false)} onDrop={(event) => { event.preventDefault(); setProjectDragging(false); void uploadFiles(event.dataTransfer.files, activeProjectId); }} onClick={() => projectFileInput.current?.click()} className={`mb-8 flex cursor-pointer flex-col items-center justify-center rounded-sm border border-dashed px-4 py-8 text-center transition-colors sm:px-6 sm:py-10 ${projectDragging ? "border-foreground bg-muted/40" : "border-border hover:border-foreground/40"}`}><p className="font-heading text-base font-medium">{uploading ? "Optimising & uploading…" : "Upload photos to this project"}</p><p className="mt-2 text-sm text-muted-foreground">Drop files or click to choose — added to this project automatically</p><input ref={projectFileInput} type="file" accept="image/*" multiple className="hidden" onChange={(event) => event.target.files && void uploadFiles(event.target.files, activeProjectId)} /></div><ul className="divide-y divide-border border-y border-border">{assignedPhotos.map((photo, index) => <li key={photo.projectPhotoId} className="flex items-center gap-4 py-4"><img src={photo.src} alt={photo.alt || "Portfolio photograph"} className="h-16 w-24 flex-none object-cover" loading="lazy" /><span className="min-w-0 flex-1 text-sm">{photo.alt || "Untitled photograph"}</span><input type="number" min="0" value={photo.projectSortOrder} aria-label={`Project order for photograph ${index + 1}`} onChange={(event) => reorderMutation.mutate({ id: photo.projectPhotoId, sortOrder: Number(event.target.value) })} className="w-16 border-b border-border bg-transparent py-1 text-sm outline-none" /><button onClick={() => removeAssignmentMutation.mutate(photo.projectPhotoId)} className="text-sm text-muted-foreground underline underline-offset-4 hover:text-leica-red">Remove</button></li>)}</ul>{assignedPhotos.length === 0 && <p className="py-8 text-sm text-muted-foreground">Assign photographs to this project from the menu above.</p>}</section>}
 
         <section className="mt-20"><div className="mb-6 flex items-end justify-between"><div><p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Library</p><h2 className="mt-2 font-heading text-2xl font-medium tracking-tight">Photographs</h2></div><span className="text-sm text-muted-foreground">{photos.length} total</span></div><div onDragOver={(event) => { event.preventDefault(); setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={(event) => { event.preventDefault(); setDragging(false); void uploadFiles(event.dataTransfer.files); }} onClick={() => fileInput.current?.click()} className={`flex cursor-pointer flex-col items-center justify-center rounded-sm border border-dashed px-6 py-12 text-center transition-colors ${dragging ? "border-foreground bg-muted/40" : "border-border hover:border-foreground/40"}`}><p className="font-heading text-base font-medium">{uploading ? "Optimising & uploading…" : "Drop photographs here"}</p><p className="mt-2 text-sm text-muted-foreground">or click to choose files — resized to 1600px, compressed to ~200KB</p><input ref={fileInput} type="file" accept="image/*" multiple className="hidden" onChange={(event) => event.target.files && void uploadFiles(event.target.files)} /></div>{message && <p className="mt-4 text-sm text-muted-foreground">{message}</p>}<ul className="mt-10 divide-y divide-border border-y border-border">{photos.map((photo) => { const draft = drafts[photo.id] ?? { alt: photo.alt, sortOrder: photo.sortOrder }; const dirty = draft.alt !== photo.alt || draft.sortOrder !== photo.sortOrder; return <li key={photo.id} className="flex items-center gap-4 py-4"><img src={photo.src} alt={photo.alt || "Portfolio photograph"} className="h-16 w-24 flex-none object-cover" loading="lazy" /><input value={draft.alt} placeholder="Alt text" aria-label="Alt text" onChange={(event) => setDrafts((prev) => ({ ...prev, [photo.id]: { ...draft, alt: event.target.value } }))} className="min-w-0 flex-1 border-b border-transparent bg-transparent py-1 text-sm outline-none transition-colors focus:border-border" /><input type="number" value={draft.sortOrder} aria-label="Display order" onChange={(event) => setDrafts((prev) => ({ ...prev, [photo.id]: { ...draft, sortOrder: Number(event.target.value) } }))} className="w-16 flex-none border-b border-transparent bg-transparent py-1 text-sm outline-none transition-colors focus:border-border" /><button disabled={!dirty || saveMutation.isPending} onClick={() => saveMutation.mutate({ id: photo.id, alt: draft.alt, sortOrder: draft.sortOrder })} className="flex-none text-sm font-medium transition-colors disabled:text-muted-foreground/50">Save</button><button onClick={() => { if (confirm("Remove this photograph?")) deleteMutation.mutate(photo.id); }} className="flex-none text-sm text-muted-foreground transition-colors hover:text-leica-red">Delete</button></li>; })}</ul>{photos.length === 0 && <p className="py-10 text-sm text-muted-foreground">No photographs yet.</p>}</section>
       </main>

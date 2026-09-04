@@ -67,16 +67,36 @@ export function toGalleryPhoto(
 
 export const listPhotos = createServerFn({ method: "GET" }).handler(async () => {
   const client = createPublicClient();
-  const { data, error } = await client
-    .from("photos")
-    .select("id, url, storage_path, alt, sort_order, width, height, in_portfolio")
-    .eq("in_portfolio", true)
-    .order("sort_order", { ascending: true })
-    .order("created_at", { ascending: true });
+  const columns = "id, url, storage_path, alt, sort_order, width, height, in_portfolio, created_at";
 
-  if (error) throw new Error(error.message);
-  return (data ?? []).map((row) => toGalleryPhoto(client, row as PhotoRow));
+  // The homepage gallery is the union of the curated library photographs and
+  // every photograph belonging to a published project (RLS filters drafts out).
+  const [portfolio, links] = await Promise.all([
+    client.from("photos").select(columns).eq("in_portfolio", true),
+    client.from("project_photos").select("photo_id"),
+  ]);
+  if (portfolio.error) throw new Error(portfolio.error.message);
+  if (links.error) throw new Error(links.error.message);
+
+  const rows = new Map<string, PhotoRow & { created_at: string }>();
+  for (const row of (portfolio.data ?? []) as Array<PhotoRow & { created_at: string }>) {
+    rows.set(row.id, row);
+  }
+
+  const projectPhotoIds = [...new Set(((links.data ?? []) as Array<{ photo_id: string }>).map((l) => l.photo_id))]
+    .filter((id) => !rows.has(id));
+  if (projectPhotoIds.length > 0) {
+    const { data, error } = await client.from("photos").select(columns).in("id", projectPhotoIds);
+    if (error) throw new Error(error.message);
+    for (const row of (data ?? []) as Array<PhotoRow & { created_at: string }>) rows.set(row.id, row);
+  }
+
+  // Keep the existing curated ordering: sort_order first, then upload time.
+  return [...rows.values()]
+    .sort((a, b) => a.sort_order - b.sort_order || a.created_at.localeCompare(b.created_at))
+    .map((row) => toGalleryPhoto(client, row));
 });
+
 
 export const getIsAdmin = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
