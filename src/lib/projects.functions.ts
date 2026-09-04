@@ -51,7 +51,12 @@ export type ProjectSummary = {
 
 export type ProjectDetail = ProjectSummary & { photos: GalleryPhoto[] };
 
-export type AdminProjectPhoto = GalleryPhoto & { projectPhotoId: string; projectSortOrder: number };
+export type AdminProjectPhoto = GalleryPhoto & {
+  projectPhotoId: string;
+  projectSortOrder: number;
+  showOnHomepage: boolean;
+};
+
 
 function createPublicClient() {
   const key = process.env["SUPABASE_PUBLISHABLE_KEY"]!;
