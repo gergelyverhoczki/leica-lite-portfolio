@@ -83,7 +83,7 @@ function AdminPage() {
   const runDeleteProject = useServerFn(deleteProject);
   const runAddPhotoToProject = useServerFn(addPhotoToProject);
   const runRemovePhotoFromProject = useServerFn(removePhotoFromProject);
-  const runUpdateProjectPhotoOrder = useServerFn(updateProjectPhotoOrder);
+  const runSetProjectPhotoHomepage = useServerFn(setProjectPhotoHomepage);
 
   const adminQuery = useQuery({ queryKey: ["is-admin"], queryFn: () => checkAdmin() });
   const photosQuery = useQuery({
