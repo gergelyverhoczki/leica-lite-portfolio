@@ -58,9 +58,12 @@ function AdminPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const fileInput = useRef<HTMLInputElement>(null);
+  const projectFileInput = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
+  const [projectDragging, setProjectDragging] = useState(false);
+
   const [drafts, setDrafts] = useState<Record<string, { alt: string; sortOrder: number }>>({});
   const [projectDraft, setProjectDraft] = useState<ProjectDraft>(blankProject);
   const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
