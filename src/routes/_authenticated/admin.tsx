@@ -173,31 +173,55 @@ function AdminPage() {
     navigate({ to: "/auth", replace: true });
   };
 
-  const uploadFiles = async (files: FileList | File[]) => {
+  const uploadFiles = async (files: FileList | File[], projectId?: string) => {
     const list = Array.from(files).filter((file) => file.type.startsWith("image/"));
     if (list.length === 0) return;
     setUploading(true);
     setMessage(null);
     let nextOrder = (photosQuery.data ?? []).reduce((max, photo) => Math.max(max, photo.sortOrder), 0) + 1;
+    let nextProjectOrder = (projectPhotosQuery.data ?? []).reduce((max, photo) => Math.max(max, photo.projectSortOrder), -1) + 1;
     try {
+      let done = 0;
       for (const original of list) {
+        setMessage(`Uploading ${done + 1} of ${list.length}…`);
         const { file, width, height } = await compressImage(original);
         const extension = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
         const path = `${crypto.randomUUID()}.${extension}`;
         const { error: uploadError } = await supabase.storage.from("photos").upload(path, file, { contentType: file.type, upsert: false });
         if (uploadError) throw new Error(uploadError.message);
-        await runAddPhoto({ data: { storagePath: path, alt: "", sortOrder: nextOrder, ...(width > 0 && height > 0 ? { width, height } : {}) } });
+        const created = await runAddPhoto({
+          data: {
+            storagePath: path,
+            alt: "",
+            sortOrder: nextOrder,
+            // Project uploads live in the project; the homepage picks them up
+            // automatically while the project is published.
+            inPortfolio: !projectId,
+            ...(width > 0 && height > 0 ? { width, height } : {}),
+          },
+        });
+        if (projectId) {
+          await runAddPhotoToProject({ data: { projectId, photoId: created.id, sortOrder: nextProjectOrder } });
+          nextProjectOrder += 1;
+        }
         nextOrder += 1;
+        done += 1;
       }
       setMessage(`${list.length} photo${list.length > 1 ? "s" : ""} uploaded.`);
       await queryClient.invalidateQueries({ queryKey: ["admin-photos"] });
+      if (projectId) {
+        await queryClient.invalidateQueries({ queryKey: ["admin-project-photos", projectId] });
+        await queryClient.invalidateQueries({ queryKey: ["admin-projects"] });
+      }
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Upload failed.");
     } finally {
       setUploading(false);
       if (fileInput.current) fileInput.current.value = "";
+      if (projectFileInput.current) projectFileInput.current.value = "";
     }
   };
+
 
   const startEditing = (project: NonNullable<typeof projectsQuery.data>[number]) => {
     setSelectedProjectId(project.id);
