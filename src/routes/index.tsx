@@ -169,16 +169,27 @@ function Index() {
             <span className="font-heading text-xl font-medium tracking-tight">Gergely Verhoczki</span>
           </Link>
           <nav className="hidden items-center gap-8 text-sm font-medium md:flex">
-            {NAV_LINKS.map((link) => (
-              <a
-                key={link.href}
-                href={link.href}
-                className="story-link text-muted-foreground transition-colors hover:text-foreground"
-              >
-                {link.label}
-              </a>
-            ))}
+            {NAV_LINKS.map((link) =>
+              link.href === "/projects" ? (
+                <Link
+                  key={link.href}
+                  to="/projects"
+                  className="story-link text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  {link.label}
+                </Link>
+              ) : (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  className="story-link text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  {link.label}
+                </a>
+              ),
+            )}
           </nav>
+
 
           <button
             onClick={() => setMenuOpen((open) => !open)}
