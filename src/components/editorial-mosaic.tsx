@@ -332,7 +332,7 @@ function MosaicImage({
   eager: boolean;
   mobile: boolean;
 }) {
-  const ref = useRef<HTMLButtonElement | null>(null);
+  const ref = useRef<HTMLDivElement | null>(null);
   const [visible, setVisible] = useState(eager);
 
   useEffect(() => {
@@ -352,31 +352,63 @@ function MosaicImage({
     return () => observer.disconnect();
   }, [eager]);
 
+  const { projectSlug, projectTitle } = entry.photo;
+  const image = (
+    <img
+      src={entry.photo.src}
+      alt={entry.photo.alt}
+      loading={eager ? "eager" : "lazy"}
+      decoding="async"
+      style={{ aspectRatio: entry.ratio }}
+      className={`block h-full w-full object-contain transition-opacity duration-[900ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${
+        visible ? "opacity-100" : "opacity-0"
+      }`}
+    />
+  );
+
   return (
-    <button
+    <div
       ref={ref}
-      onClick={() => onOpen(entry.index)}
-      aria-label={`Open photograph ${entry.index + 1}`}
-      className="group block cursor-zoom-in"
+      className="relative"
       style={
         mobile
           ? { width: entry.ratio * height, height, flex: "0 0 auto" }
           : { width: entry.ratio * height, height, flexGrow: entry.ratio, flexBasis: 0 }
       }
     >
-      <img
-        src={entry.photo.src}
-        alt={entry.photo.alt}
-        loading={eager ? "eager" : "lazy"}
-        decoding="async"
-        style={{ aspectRatio: entry.ratio }}
-        className={`block h-full w-full object-contain transition-opacity duration-[900ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${
-          visible ? "opacity-100" : "opacity-0"
-        }`}
-      />
-    </button>
+      {projectSlug ? (
+        <Link
+          to="/projects/$slug"
+          params={{ slug: projectSlug }}
+          aria-label={projectTitle ? `Open the ${projectTitle} project` : "Open project"}
+          className="group block h-full w-full"
+        >
+          {image}
+        </Link>
+      ) : (
+        <button
+          onClick={() => onOpen(entry.index)}
+          aria-label={`Open photograph ${entry.index + 1}`}
+          className="group block h-full w-full cursor-zoom-in"
+        >
+          {image}
+        </button>
+      )}
+
+      {projectSlug && projectTitle && (
+        // Absolutely positioned so the mosaic's measured heights stay untouched.
+        <Link
+          to="/projects/$slug"
+          params={{ slug: projectSlug }}
+          className="absolute left-0 top-full mt-2 text-[10px] uppercase tracking-[0.18em] text-muted-foreground transition-colors hover:text-foreground"
+        >
+          {projectTitle}
+        </Link>
+      )}
+    </div>
   );
 }
+
 
 
 export function EditorialMosaic({
