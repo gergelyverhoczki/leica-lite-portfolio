@@ -216,16 +216,28 @@ function Index() {
         {menuOpen && (
           <nav className="border-t border-border bg-background md:hidden">
             <div className="mx-auto flex max-w-7xl flex-col px-6 py-2">
-              {NAV_LINKS.map((link) => (
-                <a
-                  key={link.href}
-                  href={link.href}
-                  onClick={() => setMenuOpen(false)}
-                  className="border-b border-border/60 py-4 font-heading text-lg font-medium tracking-tight last:border-b-0"
-                >
-                  {link.label}
-                </a>
-              ))}
+              {NAV_LINKS.map((link) =>
+                link.href === "/projects" ? (
+                  <Link
+                    key={link.href}
+                    to="/projects"
+                    onClick={() => setMenuOpen(false)}
+                    className="border-b border-border/60 py-4 font-heading text-lg font-medium tracking-tight last:border-b-0"
+                  >
+                    {link.label}
+                  </Link>
+                ) : (
+                  <a
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setMenuOpen(false)}
+                    className="border-b border-border/60 py-4 font-heading text-lg font-medium tracking-tight last:border-b-0"
+                  >
+                    {link.label}
+                  </a>
+                ),
+              )}
+
             </div>
           </nav>
         )}
