@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { Link } from "@tanstack/react-router";
 
 export type MosaicPhotoItem = {
   id: string;
@@ -6,7 +7,10 @@ export type MosaicPhotoItem = {
   alt: string;
   width?: number | null;
   height?: number | null;
+  projectTitle?: string | null;
+  projectSlug?: string | null;
 };
+
 
 const DEFAULT_RATIO = 3 / 2;
 
