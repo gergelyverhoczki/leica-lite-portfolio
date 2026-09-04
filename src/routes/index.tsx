@@ -4,12 +4,19 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { Send } from "lucide-react";
 
 import { listPhotos } from "@/lib/photos.functions";
+import { listProjectsForCarousel } from "@/lib/projects.functions";
 import { EditorialMosaic } from "@/components/editorial-mosaic";
+import { ProjectsCarousel } from "@/components/projects-carousel";
 
 
 const photosQueryOptions = queryOptions({
   queryKey: ["photos"],
   queryFn: () => listPhotos(),
+});
+
+const carouselQueryOptions = queryOptions({
+  queryKey: ["carousel-projects"],
+  queryFn: () => listProjectsForCarousel(),
 });
 
 const DESCRIPTION =
@@ -19,7 +26,10 @@ const DESCRIPTION =
 const SITE_URL = "https://gergelyverhoczki.com";
 
 export const Route = createFileRoute("/")({
-  loader: ({ context }) => context.queryClient.ensureQueryData(photosQueryOptions),
+  loader: async ({ context }) => {
+    void context.queryClient.ensureQueryData(carouselQueryOptions);
+    return context.queryClient.ensureQueryData(photosQueryOptions);
+  },
   head: ({ loaderData }) => {
     const cover = loaderData?.find((photo) => photo.src.startsWith("https://"))?.src;
 
@@ -89,6 +99,7 @@ const PAGE_SIZE = 14;
 
 function Index() {
   const { data: photos } = useSuspenseQuery(photosQueryOptions);
+  const { data: carouselProjects } = useSuspenseQuery(carouselQueryOptions);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [isClosing, setIsClosing] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -297,6 +308,8 @@ function Index() {
         </div>
       </section>
 
+
+      <ProjectsCarousel projects={carouselProjects} />
 
       {/* Contact */}
       <section id="contact" className="border-t border-border px-6 py-20 md:px-10 md:py-32">

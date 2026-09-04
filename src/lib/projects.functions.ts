@@ -17,6 +17,7 @@ type ProjectRow = {
   description: string | null;
   status: string;
   sort_order: number;
+  cover_photo_id?: string | null;
 };
 
 type ProjectPhotoRow = {
@@ -47,6 +48,7 @@ export type ProjectSummary = {
   status: string;
   sortOrder: number;
   photoCount: number;
+  coverPhotoId: string | null;
 };
 
 export type ProjectDetail = ProjectSummary & { photos: GalleryPhoto[] };
@@ -103,6 +105,7 @@ function toSummary(row: ProjectRow, photoCount: number): ProjectSummary {
     status: row.status,
     sortOrder: row.sort_order,
     photoCount,
+    coverPhotoId: row.cover_photo_id ?? null,
   };
 }
 
@@ -111,7 +114,7 @@ async function getPublishedProjects() {
   const [{ data: projects, error: projectError }, { data: links, error: linkError }] = await Promise.all([
     client
       .from("projects")
-      .select("id, title, slug, year, description, status, sort_order")
+      .select("id, title, slug, year, description, status, sort_order, cover_photo_id")
       .eq("status", "published")
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: true }),
@@ -139,7 +142,7 @@ export const getPublishedProject = createServerFn({ method: "GET" })
     const client = createPublicClient();
     let { data: project, error } = await client
       .from("projects")
-      .select("id, title, slug, year, description, status, sort_order")
+      .select("id, title, slug, year, description, status, sort_order, cover_photo_id")
       .eq("slug", data.slug)
       .eq("status", "published")
       .maybeSingle();
@@ -155,7 +158,7 @@ export const getPublishedProject = createServerFn({ method: "GET" })
       if (history) {
         const result = await client
           .from("projects")
-          .select("id, title, slug, year, description, status, sort_order")
+          .select("id, title, slug, year, description, status, sort_order, cover_photo_id")
           .eq("id", history.project_id)
           .eq("status", "published")
           .maybeSingle();
@@ -230,7 +233,7 @@ export const listProjectsForAdmin = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("projects")
-      .select("id, title, slug, year, description, status, sort_order")
+      .select("id, title, slug, year, description, status, sort_order, cover_photo_id")
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: true });
     if (error) throw new Error(error.message);
@@ -380,6 +383,72 @@ export const updateProjectPhotoOrder = createServerFn({ method: "POST" })
       .from("project_photos")
       .update({ sort_order: data.sortOrder })
       .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export type CarouselProject = {
+  id: string;
+  title: string;
+  slug: string;
+  cover: GalleryPhoto | null;
+};
+
+export const listProjectsForCarousel = createServerFn({ method: "GET" }).handler(async () => {
+  const client = createPublicClient();
+  const projects = await getPublishedProjects();
+  if (projects.length === 0) return [] as CarouselProject[];
+
+  const { data: links, error: linkError } = await client
+    .from("project_photos")
+    .select("project_id, photo_id, sort_order")
+    .in("project_id", projects.map((project) => project.id))
+    .order("sort_order", { ascending: true });
+  if (linkError) throw new Error(linkError.message);
+
+  const firstPhoto = new Map<string, string>();
+  for (const link of (links ?? []) as Array<{ project_id: string; photo_id: string }>) {
+    if (!firstPhoto.has(link.project_id)) firstPhoto.set(link.project_id, link.photo_id);
+  }
+
+  const coverIds = [
+    ...new Set(
+      projects.flatMap((project) => {
+        const id = project.coverPhotoId ?? firstPhoto.get(project.id);
+        return id ? [id] : [];
+      }),
+    ),
+  ];
+  if (coverIds.length === 0) return [] as CarouselProject[];
+
+  const { data: photos, error: photoError } = await client
+    .from("photos")
+    .select("id, url, storage_path, alt, sort_order, width, height")
+    .in("id", coverIds);
+  if (photoError) throw new Error(photoError.message);
+  const photoMap = new Map(((photos ?? []) as PhotoRow[]).map((photo) => [photo.id, toPhoto(client, photo)]));
+
+  return projects.map((project) => {
+    const coverId = project.coverPhotoId ?? firstPhoto.get(project.id);
+    return {
+      id: project.id,
+      title: project.title,
+      slug: project.slug,
+      cover: coverId ? photoMap.get(coverId) ?? null : null,
+    };
+  }) satisfies CarouselProject[];
+});
+
+export const setProjectCover = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({ projectId: z.string().uuid(), photoId: z.string().uuid().nullable() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase
+      .from("projects")
+      .update({ cover_photo_id: data.photoId })
+      .eq("id", data.projectId);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
