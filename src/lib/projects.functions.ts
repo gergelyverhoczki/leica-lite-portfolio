@@ -24,7 +24,9 @@ type ProjectPhotoRow = {
   project_id: string;
   photo_id: string;
   sort_order: number;
+  show_on_homepage?: boolean | null;
 };
+
 
 type PhotoRow = {
   id: string;
