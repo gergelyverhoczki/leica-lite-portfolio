@@ -19,9 +19,11 @@ import {
   listProjectPhotosForAdmin,
   listProjectsForAdmin,
   removePhotoFromProject,
+  setProjectPhotoHomepage,
   updateProject,
   updateProjectPhotoOrder,
 } from "@/lib/projects.functions";
+
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
