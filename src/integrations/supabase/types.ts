@@ -123,6 +123,7 @@ export type Database = {
       }
       projects: {
         Row: {
+          cover_photo_id: string | null
           created_at: string
           description: string | null
           id: string
@@ -134,6 +135,7 @@ export type Database = {
           year: string | null
         }
         Insert: {
+          cover_photo_id?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -145,6 +147,7 @@ export type Database = {
           year?: string | null
         }
         Update: {
+          cover_photo_id?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -155,7 +158,15 @@ export type Database = {
           updated_at?: string
           year?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "projects_cover_photo_id_fkey"
+            columns: ["cover_photo_id"]
+            isOneToOne: false
+            referencedRelation: "photos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
