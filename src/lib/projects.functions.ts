@@ -309,7 +309,7 @@ export const listProjectPhotosForAdmin = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     const { data: links, error: linkError } = await context.supabase
       .from("project_photos")
-      .select("id, project_id, photo_id, sort_order")
+      .select("id, project_id, photo_id, sort_order, show_on_homepage")
       .eq("project_id", data.projectId)
       .order("sort_order", { ascending: true });
     if (linkError) throw new Error(linkError.message);
@@ -324,9 +324,29 @@ export const listProjectPhotosForAdmin = createServerFn({ method: "GET" })
     const photoMap = new Map(((photos ?? []) as PhotoRow[]).map((photo) => [photo.id, toPhoto(publicClient, photo)]));
     return projectLinks.flatMap((link) => {
       const photo = photoMap.get(link.photo_id);
-      return photo ? [{ ...photo, projectPhotoId: link.id, projectSortOrder: link.sort_order }] : [];
+      return photo
+        ? [{
+            ...photo,
+            projectPhotoId: link.id,
+            projectSortOrder: link.sort_order,
+            showOnHomepage: link.show_on_homepage === true,
+          }]
+        : [];
     });
   });
+
+export const setProjectPhotoHomepage = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ id: z.string().uuid(), showOnHomepage: z.boolean() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase
+      .from("project_photos")
+      .update({ show_on_homepage: data.showOnHomepage })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 
 export const addPhotoToProject = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
