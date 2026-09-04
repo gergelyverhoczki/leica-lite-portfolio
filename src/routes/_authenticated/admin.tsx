@@ -172,6 +172,14 @@ function AdminPage() {
     mutationFn: (input: { id: string; sortOrder: number }) => runUpdateProjectPhotoOrder({ data: input }),
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["admin-project-photos", activeProjectId] }),
   });
+  const homepageMutation = useMutation({
+    mutationFn: (input: { id: string; showOnHomepage: boolean }) => runSetProjectPhotoHomepage({ data: input }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["admin-project-photos", activeProjectId] });
+    },
+    onError: (error) => setMessage(error instanceof Error ? error.message : "Could not update homepage selection."),
+  });
+
 
   const handleSignOut = async () => {
     await queryClient.cancelQueries();
