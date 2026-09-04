@@ -78,9 +78,11 @@ export const Route = createFileRoute("/")({
 
 
 const NAV_LINKS = [
-  { href: "/work", label: "Work" },
+  { href: "#work", label: "Work" },
+  { href: "/projects", label: "Projects" },
   { href: "#contact", label: "Contact" },
 ];
+
 
 const PAGE_SIZE = 14;
 
