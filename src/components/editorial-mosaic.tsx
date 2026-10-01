@@ -151,6 +151,8 @@ function buildMobileRows(
   const rows: Row[] = [];
   let i = 0;
   let slot = 0;
+  const enableAccents = entries.length >= Math.max(cfg.pairEvery, cfg.supportEvery) * 2;
+
 
   while (i < entries.length) {
     const first = entries[i]!;
@@ -158,7 +160,7 @@ function buildMobileRows(
 
     // Use a pair only when it makes a genuinely readable, balanced row. The
     // shared height is exact: both natural widths plus the gap fill the measure.
-    if (next) {
+    if (next && enableAccents) {
       const pairHeight = (containerWidth - gap) / (first.ratio + next.ratio);
       const balanced = Math.abs(first.ratio - next.ratio) < 0.65;
       const readable = pairHeight >= cfg.minPairHeight;
@@ -180,7 +182,7 @@ function buildMobileRows(
     // Singles use nearly all of the measure. Only the occasional supporting
     // frame is intentionally narrower, and its height still comes from ratio.
     const isSupport =
-      cfg.supportEvery > 0 && slot > 0 && slot % cfg.supportEvery === cfg.supportEvery - 1;
+      enableAccents && cfg.supportEvery > 0 && slot > 0 && slot % cfg.supportEvery === cfg.supportEvery - 1;
     const requestedWidth = isSupport
       ? containerWidth * cfg.supportWidth
       : first.ratio < 0.9
@@ -246,12 +248,14 @@ function buildRows(
   const rows: Row[] = [];
   let i = 0;
   let rowIndex = 0;
+  const enableAccents = entries.length >= Math.max(cfg.heroEvery, cfg.soloEvery) * 2;
+
 
   while (i < entries.length) {
     const remaining = entries.length - i;
 
-    const wantsHero = cfg.heroEvery > 0 && rowIndex % cfg.heroEvery === 0;
-    const wantsSolo = cfg.soloEvery > 0 && rowIndex % cfg.soloEvery === cfg.soloEvery - 1;
+    const wantsHero = enableAccents && cfg.heroEvery > 0 && rowIndex % cfg.heroEvery === 0;
+    const wantsSolo = enableAccents && cfg.soloEvery > 0 && rowIndex % cfg.soloEvery === cfg.soloEvery - 1;
     const first = entries[i]!;
 
     // Intentional single-image composition — explicitly sized, never accidental.
