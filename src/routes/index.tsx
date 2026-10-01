@@ -19,8 +19,7 @@ const carouselQueryOptions = queryOptions({
   queryFn: () => listProjectsForCarousel(),
 });
 
-const DESCRIPTION =
-  "A minimalist photography portfolio inspired by the precision and restraint of Leica.";
+const DESCRIPTION = "Portrait Photographer in Prague";
 
 // Keep in sync with BASE_URL in src/routes/sitemap[.]xml.ts
 const SITE_URL = "https://gergelyverhoczki.com";
